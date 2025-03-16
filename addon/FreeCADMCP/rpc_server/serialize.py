@@ -10,12 +10,12 @@ def serialize_value(value):
     elif isinstance(value, App.Rotation):
         return {
             "Axis": {"x": value.Axis.x, "y": value.Axis.y, "z": value.Axis.z},
-            "Angle": value.Angle
+            "Angle": value.Angle,
         }
     elif isinstance(value, App.Placement):
         return {
             "Base": serialize_value(value.Base),
-            "Rotation": serialize_value(value.Rotation)
+            "Rotation": serialize_value(value.Rotation),
         }
     elif isinstance(value, (list, tuple)):
         return [serialize_value(v) for v in value]
@@ -55,7 +55,7 @@ def serialize_object(obj):
             "Name": obj.Name,
             "Label": obj.Label,
             "FileName": obj.FileName,
-            "Objects": [serialize_object(child) for child in obj.Objects]
+            "Objects": [serialize_object(child) for child in obj.Objects],
         }
     else:
         result = {

@@ -32,7 +32,9 @@ class Object:
     properties: dict[str, Any]
 
 
-def set_object_property(doc: FreeCAD.Document, obj: FreeCAD.DocumentObject, properties: dict[str, Any]):
+def set_object_property(
+    doc: FreeCAD.Document, obj: FreeCAD.DocumentObject, properties: dict[str, Any]
+):
     for prop in obj.PropertiesList:
         if prop in properties:
             val = properties[prop]
@@ -41,19 +43,33 @@ def set_object_property(doc: FreeCAD.Document, obj: FreeCAD.DocumentObject, prop
                     pos = val.get("Position", {})
                     rot = val.get("Rotation", {})
                     placement = FreeCAD.Placement(
-                        FreeCAD.Vector(pos.get("x", 0), pos.get("y", 0), pos.get("z", 0)),
+                        FreeCAD.Vector(
+                            pos.get("x", 0),
+                            pos.get("y", 0),
+                            pos.get("z", 0),
+                        ),
                         FreeCAD.Rotation(
-                            FreeCAD.Vector(rot.get("Axis", {}).get("x", 0), rot.get("Axis", {}).get("y", 0), rot.get("Axis", {}).get("z", 1)),
-                            rot.get("Angle", 0)
-                        )
+                            FreeCAD.Vector(
+                                rot.get("Axis", {}).get("x", 0),
+                                rot.get("Axis", {}).get("y", 0),
+                                rot.get("Axis", {}).get("z", 1),
+                            ),
+                            rot.get("Angle", 0),
+                        ),
                     )
                     setattr(obj, prop, placement)
 
-                elif isinstance(getattr(obj, prop), FreeCAD.Vector) and isinstance(val, dict):
-                    vector = FreeCAD.Vector(val.get("x", 0), val.get("y", 0), val.get("z", 0))
+                elif isinstance(getattr(obj, prop), FreeCAD.Vector) and isinstance(
+                    val, dict
+                ):
+                    vector = FreeCAD.Vector(
+                        val.get("x", 0), val.get("y", 0), val.get("z", 0)
+                    )
                     setattr(obj, prop, vector)
 
-                elif prop in ["Base", "Tool", "Source", "Profile"] and isinstance(val, str):
+                elif prop in ["Base", "Tool", "Source", "Profile"] and isinstance(
+                    val, str
+                ):
                     ref_obj = doc.getObject(val)
                     if ref_obj:
                         setattr(obj, prop, ref_obj)
@@ -114,7 +130,9 @@ class FreeCADRPC:
             res = doc.addObject(obj.type, obj.name)
             set_object_property(doc, res, obj.properties)
             doc.recompute()
-            FreeCAD.Console.PrintMessage(f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n")
+            FreeCAD.Console.PrintMessage(
+                f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
+            )
         else:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
 
@@ -125,7 +143,9 @@ def start_rpc_server(host="localhost", port=9875):
     if rpc_server_instance:
         return "RPC Server already running."
 
-    rpc_server_instance = SimpleXMLRPCServer((host, port), allow_none=True, logRequests=False)
+    rpc_server_instance = SimpleXMLRPCServer(
+        (host, port), allow_none=True, logRequests=False
+    )
     rpc_server_instance.register_instance(FreeCADRPC())
 
     def server_loop():
@@ -156,7 +176,7 @@ def stop_rpc_server():
 
 class StartRPCServerCommand:
     def GetResources(self):
-        return {'MenuText': 'Start RPC Server', 'ToolTip': 'Start RPC Server'}
+        return {"MenuText": "Start RPC Server", "ToolTip": "Start RPC Server"}
 
     def Activated(self):
         msg = start_rpc_server()
@@ -168,7 +188,7 @@ class StartRPCServerCommand:
 
 class StopRPCServerCommand:
     def GetResources(self):
-        return {'MenuText': 'Stop RPC Server', 'ToolTip': 'Stop RPC Server'}
+        return {"MenuText": "Stop RPC Server", "ToolTip": "Stop RPC Server"}
 
     def Activated(self):
         msg = stop_rpc_server()
@@ -178,5 +198,5 @@ class StopRPCServerCommand:
         return True
 
 
-FreeCADGui.addCommand('Start_RPC_Server', StartRPCServerCommand())
-FreeCADGui.addCommand('Stop_RPC_Server', StopRPCServerCommand())
+FreeCADGui.addCommand("Start_RPC_Server", StartRPCServerCommand())
+FreeCADGui.addCommand("Stop_RPC_Server", StopRPCServerCommand())

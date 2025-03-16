@@ -7,8 +7,7 @@ from mcp.server.fastmcp import FastMCP, Context, Image
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("FreeCADMCPserver")
 
@@ -27,7 +26,6 @@ class FreeCADConnection:
         return self.server.create_object(doc_name, obj_data)
 
 
-
 @asynccontextmanager
 async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
     try:
@@ -37,7 +35,9 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
             logger.info("Successfully connected to FreeCAD on startup")
         except Exception as e:
             logger.warning(f"Could not connect to FreeCAD on startup: {str(e)}")
-            logger.warning("Make sure the FreeCAD addon is running before using FreeCAD resources or tools")
+            logger.warning(
+                "Make sure the FreeCAD addon is running before using FreeCAD resources or tools"
+            )
         yield {}
     finally:
         # Clean up the global connection on shutdown
@@ -52,7 +52,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
 mcp = FastMCP(
     "FreeCADMCP",
     description="FreeCAD integration through the Model Context Protocol",
-    lifespan=server_lifespan
+    lifespan=server_lifespan,
 )
 
 
@@ -67,7 +67,9 @@ def get_freecad_connection():
         if not _freecad_connection.ping():
             logger.error("Failed to ping FreeCAD")
             _freecad_connection = None
-            raise Exception("Failed to connect to FreeCAD. Make sure the FreeCAD addon is running.")
+            raise Exception(
+                "Failed to connect to FreeCAD. Make sure the FreeCAD addon is running."
+            )
     return _freecad_connection
 
 
@@ -96,7 +98,7 @@ def create_object(
     doc_name: str,
     obj_type: str,
     obj_name: str,
-    obj_properties: dict[str, Any] = None
+    obj_properties: dict[str, Any] = None,
 ) -> str:
     """Create a new object in FreeCAD.
 
@@ -111,11 +113,7 @@ def create_object(
     """
     freecad = get_freecad_connection()
     try:
-        obj_data = {
-            "Name": obj_name,
-            "Type": obj_type,
-            "Properties": obj_properties
-        }
+        obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties}
         res = freecad.create_object(doc_name, obj_data)
         return f"Object '{res['object_name']}' created successfully"
     except Exception as e:

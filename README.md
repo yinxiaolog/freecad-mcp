@@ -22,14 +22,14 @@ For user.
 
 ```json
 {
-    "mcpServers": {
-        "freecad": {
-            "command": "uvx",
-            "args": [
-                "freecad-mcp"
-            ]
-        }
+  "mcpServers": {
+    "freecad": {
+      "command": "uvx",
+      "args": [
+        "freecad-mcp"
+      ]
     }
+  }
 }
 ```
 
