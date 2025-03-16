@@ -1,5 +1,9 @@
 # FreeCAD MCP
 
+## Demo
+
+![demo](./assets/freecad_mcp4.gif)
+
 ## Install addon
 
 Addon directory is
