@@ -1,15 +1,19 @@
 # FreeCAD MCP
 
+This repository is a FreeCAD MCP that allows you to control FreeCAD from Claude Desktop.
+
 ## Demo
 
 ![demo](./assets/freecad_mcp4.gif)
 
 ## Install addon
 
-Addon directory is
+FreeCAD Addon directory is
 * Windows: `%APPDATA%\FreeCAD\Mod\`
 * Mac: `~/Library/Application Support/FreeCAD/Mod/`
 * Linux: `~/.FreeCAD/Mod/` or `~/snap/freecad/common/Mod/` (if you install FreeCAD from snap)
+
+Please put `addon/FreeCADMCP` directory to the addon directory.
 
 When you install addon, you need to restart FreeCAD.
 You can select "MCP Addon" from Workbench list and use it.
@@ -21,6 +25,8 @@ And you can start RPC server by "Start RPC Server" command in "FreeCAD MCP" tool
 ![start_rpc_server](./assets/start_rpc_server.png)
 
 ## Setting up Claude Desktop
+
+Edit `claude_desktop_config.json` file.
 
 For user.
 
