@@ -102,6 +102,18 @@ class FreeCADRPC:
         rpc_request_queue.put(lambda: self._create_object_gui(doc_name, obj))
         return {"success": True, "object_name": obj.name}
 
+    def execute_code(self, code: str) -> dict[str, Any]:
+        def task():
+            try:
+                exec(code, globals())
+                FreeCAD.Console.PrintMessage("Python code executed successfully.\n")
+            except Exception as e:
+                FreeCAD.Console.PrintError(
+                    f"Error executing Python code: {e}\n"
+                )
+        rpc_request_queue.put(task)
+        return {"success": True, "message": "Python code execution scheduled."}
+
     def get_objects(self, doc_name):
         doc = FreeCAD.getDocument(doc_name)
         if doc:

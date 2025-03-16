@@ -25,6 +25,15 @@ class FreeCADConnection:
     def create_object(self, doc_name: str, obj_data: dict[str, Any]) -> dict[str, Any]:
         return self.server.create_object(doc_name, obj_data)
 
+    def execute_code(self, code: str) -> dict[str, Any]:
+        return self.server.execute_code(code)
+
+    def get_objects(self, doc_name: str) -> list[dict[str, Any]]:
+        return self.server.get_objects(doc_name)
+
+    def get_object(self, doc_name: str, obj_name: str) -> dict[str, Any]:
+        return self.server.get_object(doc_name, obj_name)
+
 
 @asynccontextmanager
 async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
@@ -104,7 +113,7 @@ def create_object(
 
     Args:
         doc_name: The name of the document to create the object in.
-        obj_type: The type of the object to create (e.g. 'Part::Box', 'Part::Cylinder', etc.).
+        obj_type: The type of the object to create (e.g. 'Part::Box', 'Part::Cylinder', 'Draft::Circle', 'PartDesign::Body', etc.).
         obj_name: The name of the object to create.
         obj_properties: The properties of the object to create.
 
@@ -119,6 +128,25 @@ def create_object(
     except Exception as e:
         logger.error(f"Failed to create object: {str(e)}")
         return f"Failed to create object: {str(e)}"
+
+
+@mcp.tool()
+def execute_code(ctx: Context, code: str) -> str:
+    """Execute arbitrary Python code in FreeCAD.
+
+    Args:
+        code: The Python code to execute.
+
+    Returns:
+        A message indicating the success or failure of the code execution.
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.execute_code(code)
+        return f"Code executed successfully: {res['message']}"
+    except Exception as e:
+        logger.error(f"Failed to execute code: {str(e)}")
+        return f"Failed to execute code: {str(e)}"
 
 
 @mcp.tool()
