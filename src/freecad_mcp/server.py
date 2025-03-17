@@ -25,6 +25,9 @@ class FreeCADConnection:
     def create_object(self, doc_name: str, obj_data: dict[str, Any]) -> dict[str, Any]:
         return self.server.create_object(doc_name, obj_data)
 
+    def edit_object(self, doc_name: str, obj_name: str, obj_data: dict[str, Any]) -> dict[str, Any]:
+        return self.server.edit_object(doc_name, obj_name, obj_data)
+
     def execute_code(self, code: str) -> dict[str, Any]:
         return self.server.execute_code(code)
 
@@ -128,6 +131,30 @@ def create_object(
     except Exception as e:
         logger.error(f"Failed to create object: {str(e)}")
         return f"Failed to create object: {str(e)}"
+
+
+@mcp.tool()
+def edit_object(
+    ctx: Context, doc_name: str, obj_name: str, obj_data: dict[str, Any]
+) -> str:
+    """Edit an object in FreeCAD.
+
+    Args:
+        doc_name: The name of the document to edit the object in.
+        obj_name: The name of the object to edit.
+
+        obj_data: The properties of the object to edit.
+
+    Returns:
+        A message indicating the success or failure of the object editing.
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.edit_object(doc_name, obj_name, obj_data)
+        return f"Object '{res['object_name']}' edited successfully"
+    except Exception as e:
+        logger.error(f"Failed to edit object: {str(e)}")
+        return f"Failed to edit object: {str(e)}"
 
 
 @mcp.tool()

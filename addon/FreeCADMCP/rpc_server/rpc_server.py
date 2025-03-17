@@ -102,6 +102,15 @@ class FreeCADRPC:
         rpc_request_queue.put(lambda: self._create_object_gui(doc_name, obj))
         return {"success": True, "object_name": obj.name}
 
+    def edit_object(self, doc_name: str, obj_name: str, properties: dict[str, Any]) -> dict[str, Any]:
+        obj = Object(
+            name=obj_name,
+            type=properties["Type"],
+            properties=properties.get("Properties", {}),
+        )
+        rpc_request_queue.put(lambda: self._edit_object_gui(doc_name, obj))
+        return {"success": True, "object_name": obj.name}
+
     def execute_code(self, code: str) -> dict[str, Any]:
         def task():
             try:
@@ -147,6 +156,21 @@ class FreeCADRPC:
             )
         else:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
+
+    def _edit_object_gui(self, doc_name: str, obj: Object):
+        doc = FreeCAD.getDocument(doc_name)
+        if not doc:
+            FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
+            return
+
+        obj_ins = doc.getObject(obj.name)
+        if not obj_ins:
+            FreeCAD.Console.PrintError(f"Object '{obj.name}' not found in document '{doc_name}'.\n")
+            return
+
+        set_object_property(doc, obj_ins, obj.properties)
+        doc.recompute()
+        FreeCAD.Console.PrintMessage(f"Object '{obj.name}' updated via RPC.\n")
 
 
 def start_rpc_server(host="localhost", port=9875):

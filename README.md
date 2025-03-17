@@ -65,3 +65,12 @@ git clone https://github.com/neka-nat/freecad-mcp.git
   }
 }
 ```
+
+## Tools
+
+* `create_document`: Create a new document in FreeCAD.
+* `create_object`: Create a new object in FreeCAD.
+* `edit_object`: Edit an object in FreeCAD.
+* `execute_code`: Execute arbitrary Python code in FreeCAD.
+* `get_objects`: Get all objects in a document.
+* `get_object`: Get an object in a document.
