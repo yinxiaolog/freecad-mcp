@@ -4,7 +4,13 @@ This repository is a FreeCAD MCP that allows you to control FreeCAD from Claude 
 
 ## Demo
 
+### Design a filet
+
 ![demo](./assets/freecad_mcp4.gif)
+
+### Design a toy car
+
+![demo](./assets/make_toycar4.gif)
 
 ## Install addon
 
