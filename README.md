@@ -72,5 +72,7 @@ git clone https://github.com/neka-nat/freecad-mcp.git
 * `create_object`: Create a new object in FreeCAD.
 * `edit_object`: Edit an object in FreeCAD.
 * `execute_code`: Execute arbitrary Python code in FreeCAD.
+* `insert_part_from_library`: Insert a part from the [parts library](https://github.com/FreeCAD/FreeCAD-library).
 * `get_objects`: Get all objects in a document.
 * `get_object`: Get an object in a document.
+* `get_parts_list`: Get the list of parts in the [parts library](https://github.com/FreeCAD/FreeCAD-library).

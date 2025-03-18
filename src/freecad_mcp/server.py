@@ -28,6 +28,9 @@ class FreeCADConnection:
     def edit_object(self, doc_name: str, obj_name: str, obj_data: dict[str, Any]) -> dict[str, Any]:
         return self.server.edit_object(doc_name, obj_name, obj_data)
 
+    def insert_part_from_library(self, relative_path: str) -> dict[str, Any]:
+        return self.server.insert_part_from_library(relative_path)
+
     def execute_code(self, code: str) -> dict[str, Any]:
         return self.server.execute_code(code)
 
@@ -36,6 +39,9 @@ class FreeCADConnection:
 
     def get_object(self, doc_name: str, obj_name: str) -> dict[str, Any]:
         return self.server.get_object(doc_name, obj_name)
+
+    def get_parts_list(self) -> list[str]:
+        return self.server.get_parts_list()
 
 
 @asynccontextmanager
@@ -228,6 +234,28 @@ def execute_code(ctx: Context, code: str) -> str:
 
 
 @mcp.tool()
+def insert_part_from_library(ctx: Context, relative_path: str) -> str:
+    """Insert a part from the parts library addon.
+
+    Args:
+        relative_path: The relative path of the part to insert.
+
+    Returns:
+        A message indicating the success or failure of the part insertion.
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.insert_part_from_library(relative_path)
+        if res["success"]:
+            return f"Part inserted from library: {res['message']}"
+        else:
+            return f"Failed to insert part from library: {res['error']}"
+    except Exception as e:
+        logger.error(f"Failed to insert part from library: {str(e)}")
+        return f"Failed to insert part from library: {str(e)}"
+
+
+@mcp.tool()
 def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
     """Get all objects in a document.
     You can use this tool to get the objects in a document to see what you can check or edit.
@@ -263,7 +291,19 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
         return freecad.get_object(doc_name, obj_name)
     except Exception as e:
         logger.error(f"Failed to get object: {str(e)}")
-        return None
+        return {}
+
+
+@mcp.tool()
+def get_parts_list(ctx: Context) -> list[str]:
+    """Get the list of parts in the parts library addon.
+    """
+    freecad = get_freecad_connection()
+    parts = freecad.get_parts_list()
+    if parts:
+        return parts
+    else:
+        return f"No parts found in the parts library. You must add parts_library addon."
 
 
 def main():

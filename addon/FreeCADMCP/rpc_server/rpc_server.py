@@ -9,6 +9,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 
 from PySide2.QtCore import QTimer
 
+from .parts_library import get_parts_list, insert_part_from_library
 from .serialize import serialize_object
 
 rpc_server_thread = None
@@ -159,8 +160,19 @@ class FreeCADRPC:
         else:
             return None
 
+    def insert_part_from_library(self, relative_path):
+        rpc_request_queue.put(lambda: self._insert_part_from_library(relative_path))
+        res = rpc_response_queue.get()
+        if res is True:
+            return {"success": True, "message": "Part inserted from library."}
+        else:
+            return {"success": False, "error": res}
+
     def list_documents(self):
         return list(FreeCAD.listDocuments().keys())
+
+    def get_parts_list(self):
+        return get_parts_list()
 
     def _create_document_gui(self, name):
         doc = FreeCAD.newDocument(name)
@@ -200,6 +212,13 @@ class FreeCADRPC:
             set_object_property(doc, obj_ins, obj.properties)
             doc.recompute()
             FreeCAD.Console.PrintMessage(f"Object '{obj.name}' updated via RPC.\n")
+            return True
+        except Exception as e:
+            return str(e)
+
+    def _insert_part_from_library(self, relative_path):
+        try:
+            insert_part_from_library(relative_path)
             return True
         except Exception as e:
             return str(e)
