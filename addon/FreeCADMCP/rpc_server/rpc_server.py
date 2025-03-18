@@ -23,7 +23,8 @@ def process_gui_tasks():
     while not rpc_request_queue.empty():
         task = rpc_request_queue.get()
         res = task()
-        rpc_response_queue.put(res)
+        if res is not None:
+            rpc_response_queue.put(res)
     QTimer.singleShot(500, process_gui_tasks)
 
 
@@ -94,10 +95,10 @@ class FreeCADRPC:
     def create_document(self, name="New_Document"):
         rpc_request_queue.put(lambda: self._create_document_gui(name))
         res = rpc_response_queue.get()
-        if res:
+        if res is True:
             return {"success": True, "document_name": name}
         else:
-            return {"success": False, "error": "Failed to create document."}
+            return {"success": False, "error": res}
 
     def create_object(self, doc_name, obj_data: dict[str, Any]):
         obj = Object(
@@ -107,10 +108,10 @@ class FreeCADRPC:
         )
         rpc_request_queue.put(lambda: self._create_object_gui(doc_name, obj))
         res = rpc_response_queue.get()
-        if res:
+        if res is True:
             return {"success": True, "object_name": obj.name}
         else:
-            return {"success": False, "error": "Failed to create object."}
+            return {"success": False, "error": res}
 
     def edit_object(self, doc_name: str, obj_name: str, properties: dict[str, Any]) -> dict[str, Any]:
         obj = Object(
@@ -120,25 +121,26 @@ class FreeCADRPC:
         )
         rpc_request_queue.put(lambda: self._edit_object_gui(doc_name, obj))
         res = rpc_response_queue.get()
-        if res:
+        if res is True:
             return {"success": True, "object_name": obj.name}
         else:
-            return {"success": False, "error": "Failed to edit object."}
+            return {"success": False, "error": res}
 
     def execute_code(self, code: str) -> dict[str, Any]:
         def task():
             try:
                 exec(code, globals())
                 FreeCAD.Console.PrintMessage("Python code executed successfully.\n")
-                return None
+                return True
             except Exception as e:
                 FreeCAD.Console.PrintError(
                     f"Error executing Python code: {e}\n"
                 )
-                return str(e)
+                return f"Error executing Python code: {e}\n"
+
         rpc_request_queue.put(task)
         res = rpc_response_queue.get()
-        if res is None:
+        if res is True:
             return {"success": True, "message": "Python code execution scheduled."}
         else:
             return {"success": False, "error": res}
@@ -164,36 +166,43 @@ class FreeCADRPC:
         doc = FreeCAD.newDocument(name)
         doc.recompute()
         FreeCAD.Console.PrintMessage(f"Document '{name}' created via RPC.\n")
-        return doc
+        return True
+
     def _create_object_gui(self, doc_name, obj: Object):
         doc = FreeCAD.getDocument(doc_name)
         if doc:
-            res = doc.addObject(obj.type, obj.name)
-            set_object_property(doc, res, obj.properties)
-            doc.recompute()
-            FreeCAD.Console.PrintMessage(
-                f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
-            )
-            return res
+            try:
+                res = doc.addObject(obj.type, obj.name)
+                set_object_property(doc, res, obj.properties)
+                doc.recompute()
+                FreeCAD.Console.PrintMessage(
+                    f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
+                )
+                return True
+            except Exception as e:
+                return str(e)
         else:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
-            return None
+            return f"Document '{doc_name}' not found.\n"
 
     def _edit_object_gui(self, doc_name: str, obj: Object):
         doc = FreeCAD.getDocument(doc_name)
         if not doc:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
-            return None
+            return f"Document '{doc_name}' not found.\n"
 
         obj_ins = doc.getObject(obj.name)
         if not obj_ins:
             FreeCAD.Console.PrintError(f"Object '{obj.name}' not found in document '{doc_name}'.\n")
-            return None
+            return f"Object '{obj.name}' not found in document '{doc_name}'.\n"
 
-        set_object_property(doc, obj_ins, obj.properties)
-        doc.recompute()
-        FreeCAD.Console.PrintMessage(f"Object '{obj.name}' updated via RPC.\n")
-        return obj_ins
+        try:
+            set_object_property(doc, obj_ins, obj.properties)
+            doc.recompute()
+            FreeCAD.Console.PrintMessage(f"Object '{obj.name}' updated via RPC.\n")
+            return True
+        except Exception as e:
+            return str(e)
 
 
 def start_rpc_server(host="localhost", port=9875):
