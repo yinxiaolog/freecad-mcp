@@ -16,12 +16,14 @@ rpc_server_instance = None
 
 # GUI task queue
 rpc_request_queue = queue.Queue()
+rpc_response_queue = queue.Queue()
 
 
 def process_gui_tasks():
     while not rpc_request_queue.empty():
         task = rpc_request_queue.get()
-        task()
+        res = task()
+        rpc_response_queue.put(res)
     QTimer.singleShot(500, process_gui_tasks)
 
 
@@ -91,7 +93,11 @@ class FreeCADRPC:
 
     def create_document(self, name="New_Document"):
         rpc_request_queue.put(lambda: self._create_document_gui(name))
-        return {"success": True, "document_name": name}
+        res = rpc_response_queue.get()
+        if res:
+            return {"success": True, "document_name": name}
+        else:
+            return {"success": False, "error": "Failed to create document."}
 
     def create_object(self, doc_name, obj_data: dict[str, Any]):
         obj = Object(
@@ -100,7 +106,11 @@ class FreeCADRPC:
             properties=obj_data.get("Properties", {}),
         )
         rpc_request_queue.put(lambda: self._create_object_gui(doc_name, obj))
-        return {"success": True, "object_name": obj.name}
+        res = rpc_response_queue.get()
+        if res:
+            return {"success": True, "object_name": obj.name}
+        else:
+            return {"success": False, "error": "Failed to create object."}
 
     def edit_object(self, doc_name: str, obj_name: str, properties: dict[str, Any]) -> dict[str, Any]:
         obj = Object(
@@ -109,19 +119,29 @@ class FreeCADRPC:
             properties=properties.get("Properties", {}),
         )
         rpc_request_queue.put(lambda: self._edit_object_gui(doc_name, obj))
-        return {"success": True, "object_name": obj.name}
+        res = rpc_response_queue.get()
+        if res:
+            return {"success": True, "object_name": obj.name}
+        else:
+            return {"success": False, "error": "Failed to edit object."}
 
     def execute_code(self, code: str) -> dict[str, Any]:
         def task():
             try:
                 exec(code, globals())
                 FreeCAD.Console.PrintMessage("Python code executed successfully.\n")
+                return None
             except Exception as e:
                 FreeCAD.Console.PrintError(
                     f"Error executing Python code: {e}\n"
                 )
+                return str(e)
         rpc_request_queue.put(task)
-        return {"success": True, "message": "Python code execution scheduled."}
+        res = rpc_response_queue.get()
+        if res is None:
+            return {"success": True, "message": "Python code execution scheduled."}
+        else:
+            return {"success": False, "error": res}
 
     def get_objects(self, doc_name):
         doc = FreeCAD.getDocument(doc_name)
@@ -144,7 +164,7 @@ class FreeCADRPC:
         doc = FreeCAD.newDocument(name)
         doc.recompute()
         FreeCAD.Console.PrintMessage(f"Document '{name}' created via RPC.\n")
-
+        return doc
     def _create_object_gui(self, doc_name, obj: Object):
         doc = FreeCAD.getDocument(doc_name)
         if doc:
@@ -154,23 +174,26 @@ class FreeCADRPC:
             FreeCAD.Console.PrintMessage(
                 f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
             )
+            return res
         else:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
+            return None
 
     def _edit_object_gui(self, doc_name: str, obj: Object):
         doc = FreeCAD.getDocument(doc_name)
         if not doc:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
-            return
+            return None
 
         obj_ins = doc.getObject(obj.name)
         if not obj_ins:
             FreeCAD.Console.PrintError(f"Object '{obj.name}' not found in document '{doc_name}'.\n")
-            return
+            return None
 
         set_object_property(doc, obj_ins, obj.properties)
         doc.recompute()
         FreeCAD.Console.PrintMessage(f"Object '{obj.name}' updated via RPC.\n")
+        return obj_ins
 
 
 def start_rpc_server(host="localhost", port=9875):
