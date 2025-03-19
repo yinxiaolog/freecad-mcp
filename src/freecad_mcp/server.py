@@ -28,6 +28,9 @@ class FreeCADConnection:
     def edit_object(self, doc_name: str, obj_name: str, obj_data: dict[str, Any]) -> dict[str, Any]:
         return self.server.edit_object(doc_name, obj_name, obj_data)
 
+    def delete_object(self, doc_name: str, obj_name: str) -> dict[str, Any]:
+        return self.server.delete_object(doc_name, obj_name)
+
     def insert_part_from_library(self, relative_path: str) -> dict[str, Any]:
         return self.server.insert_part_from_library(relative_path)
 
@@ -209,6 +212,29 @@ def edit_object(
     except Exception as e:
         logger.error(f"Failed to edit object: {str(e)}")
         return f"Failed to edit object: {str(e)}"
+
+
+@mcp.tool()
+def delete_object(ctx: Context, doc_name: str, obj_name: str) -> str:
+    """Delete an object in FreeCAD.
+
+    Args:
+        doc_name: The name of the document to delete the object from.
+        obj_name: The name of the object to delete.
+
+    Returns:
+        A message indicating the success or failure of the object deletion.
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.delete_object(doc_name, obj_name)
+        if res["success"]:
+            return f"Object '{res['object_name']}' deleted successfully"
+        else:
+            return f"Failed to delete object: {res['error']}"
+    except Exception as e:
+        logger.error(f"Failed to delete object: {str(e)}")
+        return f"Failed to delete object: {str(e)}"
 
 
 @mcp.tool()

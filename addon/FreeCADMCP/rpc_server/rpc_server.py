@@ -127,6 +127,14 @@ class FreeCADRPC:
         else:
             return {"success": False, "error": res}
 
+    def delete_object(self, doc_name: str, obj_name: str):
+        rpc_request_queue.put(lambda: self._delete_object_gui(doc_name, obj_name))
+        res = rpc_response_queue.get()
+        if res is True:
+            return {"success": True, "message": "Object deleted successfully."}
+        else:
+            return {"success": False, "error": res}
+
     def execute_code(self, code: str) -> dict[str, Any]:
         def task():
             try:
@@ -215,6 +223,17 @@ class FreeCADRPC:
             return True
         except Exception as e:
             return str(e)
+
+    def _delete_object_gui(self, doc_name: str, obj_name: str):
+        doc = FreeCAD.getDocument(doc_name)
+        if not doc:
+            FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
+            return f"Document '{doc_name}' not found.\n"
+
+        doc.removeObject(obj_name)
+        doc.recompute()
+        FreeCAD.Console.PrintMessage(f"Object '{obj_name}' deleted via RPC.\n")
+        return True
 
     def _insert_part_from_library(self, relative_path):
         try:
