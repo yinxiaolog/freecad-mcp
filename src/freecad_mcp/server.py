@@ -189,15 +189,16 @@ def create_object(
     try:
         obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties or {}}
         res = freecad.create_object(doc_name, obj_data)
+        screenshot = freecad.get_active_screenshot()
         if res["success"]:
-            screenshot = freecad.get_active_screenshot()
             return [
                 TextContent(type="text", text=f"Object '{res['object_name']}' created successfully"),
                 ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
         else:
             return [
-                TextContent(type="text", text=f"Failed to create object: {res['error']}")
+                TextContent(type="text", text=f"Failed to create object: {res['error']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
     except Exception as e:
         logger.error(f"Failed to create object: {str(e)}")
@@ -224,15 +225,16 @@ def edit_object(
     freecad = get_freecad_connection()
     try:
         res = freecad.edit_object(doc_name, obj_name, obj_properties)
+        screenshot = freecad.get_active_screenshot()
         if res["success"]:
-            screenshot = freecad.get_active_screenshot()
             return [
                 TextContent(type="text", text=f"Object '{res['object_name']}' edited successfully"),
                 ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
         else:
             return [
-                TextContent(type="text", text=f"Failed to edit object: {res['error']}")
+                TextContent(type="text", text=f"Failed to edit object: {res['error']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
     except Exception as e:
         logger.error(f"Failed to edit object: {str(e)}")
@@ -255,15 +257,16 @@ def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextConten
     freecad = get_freecad_connection()
     try:
         res = freecad.delete_object(doc_name, obj_name)
+        screenshot = freecad.get_active_screenshot()
         if res["success"]:
-            screenshot = freecad.get_active_screenshot()
             return [
                 TextContent(type="text", text=f"Object '{res['object_name']}' deleted successfully"),
                 ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
         else:
             return [
-                TextContent(type="text", text=f"Failed to delete object: {res['error']}")
+                TextContent(type="text", text=f"Failed to delete object: {res['error']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
     except Exception as e:
         logger.error(f"Failed to delete object: {str(e)}")
@@ -285,15 +288,16 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
     freecad = get_freecad_connection()
     try:
         res = freecad.execute_code(code)
+        screenshot = freecad.get_active_screenshot()
         if res["success"]:
-            screenshot = freecad.get_active_screenshot()
             return [
                 TextContent(type="text", text=f"Code executed successfully: {res['message']}"),
                 ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
         else:
             return [
-                TextContent(type="text", text=f"Failed to execute code: {res['error']}")
+                TextContent(type="text", text=f"Failed to execute code: {res['error']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
     except Exception as e:
         logger.error(f"Failed to execute code: {str(e)}")
@@ -315,15 +319,16 @@ def insert_part_from_library(ctx: Context, relative_path: str) -> list[TextConte
     freecad = get_freecad_connection()
     try:
         res = freecad.insert_part_from_library(relative_path)
+        screenshot = freecad.get_active_screenshot()
         if res["success"]:
-            screenshot = freecad.get_active_screenshot()
             return [
                 TextContent(type="text", text=f"Part inserted from library: {res['message']}"),
                 ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
         else:
             return [
-                TextContent(type="text", text=f"Failed to insert part from library: {res['error']}")
+                TextContent(type="text", text=f"Failed to insert part from library: {res['error']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
             ]
     except Exception as e:
         logger.error(f"Failed to insert part from library: {str(e)}")

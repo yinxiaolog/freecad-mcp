@@ -6,7 +6,7 @@ import base64
 import os
 import tempfile
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from xmlrpc.server import SimpleXMLRPCServer
 
@@ -35,8 +35,8 @@ def process_gui_tasks():
 @dataclass
 class Object:
     name: str
-    type: str
-    properties: dict[str, Any]
+    type: str | None = None
+    properties: dict[str, Any] = field(default_factory=dict)
 
 
 def set_object_property(
@@ -120,7 +120,6 @@ class FreeCADRPC:
     def edit_object(self, doc_name: str, obj_name: str, properties: dict[str, Any]) -> dict[str, Any]:
         obj = Object(
             name=obj_name,
-            type=properties["Type"],
             properties=properties.get("Properties", {}),
         )
         rpc_request_queue.put(lambda: self._edit_object_gui(doc_name, obj))
