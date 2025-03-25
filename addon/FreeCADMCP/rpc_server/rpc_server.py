@@ -258,11 +258,14 @@ class FreeCADRPC:
             return str(e)
 
     def _save_active_screenshot(self, save_path: str):
-        view = FreeCADGui.ActiveDocument.ActiveView
-        view.viewFront()
-        view.fitAll()
-        view.saveImage(save_path, 1)
-        return True
+        try:
+            view = FreeCADGui.ActiveDocument.ActiveView
+            view.viewIsometric()
+            view.fitAll()
+            view.saveImage(save_path, 1)
+            return True
+        except Exception as e:
+            return str(e)
 
 
 def start_rpc_server(host="localhost", port=9875):
