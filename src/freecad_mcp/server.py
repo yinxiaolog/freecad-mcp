@@ -152,7 +152,7 @@ def create_object(
         obj_properties: The properties of the object to create.
 
     Returns:
-        A message indicating the success or failure of the object creation.
+        A message indicating the success or failure of the object creation and a screenshot of the object.
 
     Examples:
         If you want to create a cylinder with a height of 30 and a radius of 10, you can use the following data.
@@ -219,7 +219,7 @@ def edit_object(
         obj_properties: The properties of the object to edit.
 
     Returns:
-        A message indicating the success or failure of the object editing.
+        A message indicating the success or failure of the object editing and a screenshot of the object.
     """
     freecad = get_freecad_connection()
     try:
@@ -250,7 +250,7 @@ def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextConten
         obj_name: The name of the object to delete.
 
     Returns:
-        A message indicating the success or failure of the object deletion.
+        A message indicating the success or failure of the object deletion and a screenshot of the object.
     """
     freecad = get_freecad_connection()
     try:
@@ -280,7 +280,7 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
         code: The Python code to execute.
 
     Returns:
-        A message indicating the success or failure of the code execution.
+        A message indicating the success or failure of the code execution and a screenshot of the object.
     """
     freecad = get_freecad_connection()
     try:
@@ -310,7 +310,7 @@ def insert_part_from_library(ctx: Context, relative_path: str) -> list[TextConte
         relative_path: The relative path of the part to insert.
 
     Returns:
-        A message indicating the success or failure of the part insertion.
+        A message indicating the success or failure of the part insertion and a screenshot of the object.
     """
     freecad = get_freecad_connection()
     try:
@@ -341,7 +341,7 @@ def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
         doc_name: The name of the document to get the objects from.
 
     Returns:
-        A list of objects in the document.
+        A list of objects in the document and a screenshot of the document.
     """
     freecad = get_freecad_connection()
     try:
@@ -367,7 +367,7 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
         obj_name: The name of the object to get.
 
     Returns:
-        The object.
+        The object and a screenshot of the object.
     """
     freecad = get_freecad_connection()
     try:
