@@ -47,7 +47,7 @@ def set_object_property(
             val = properties[prop]
             try:
                 if prop == "Placement" and isinstance(val, dict):
-                    pos = val.get("Position", {})
+                    pos = val.get("Base", {})
                     rot = val.get("Rotation", {})
                     placement = FreeCAD.Placement(
                         FreeCAD.Vector(
