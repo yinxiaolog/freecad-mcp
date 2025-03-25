@@ -2,6 +2,9 @@ import FreeCAD
 import FreeCADGui
 
 import queue
+import base64
+import os
+import tempfile
 import threading
 from dataclasses import dataclass
 from typing import Any
@@ -182,6 +185,18 @@ class FreeCADRPC:
     def get_parts_list(self):
         return get_parts_list()
 
+    def get_active_screenshot(self) -> str:
+        temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        rpc_request_queue.put(lambda: self._save_active_screenshot(temp_file.name))
+        res = rpc_response_queue.get()
+        if res is True:
+            with open(temp_file.name, "rb") as image_file:
+                image_bytes = image_file.read()
+                os.remove(temp_file.name)
+                return base64.b64encode(image_bytes).decode("utf-8")
+        else:
+            return None
+
     def _create_document_gui(self, name):
         doc = FreeCAD.newDocument(name)
         doc.recompute()
@@ -241,6 +256,13 @@ class FreeCADRPC:
             return True
         except Exception as e:
             return str(e)
+
+    def _save_active_screenshot(self, save_path: str):
+        view = FreeCADGui.ActiveDocument.ActiveView
+        view.viewFront()
+        view.fitAll()
+        view.saveImage(save_path, 1)
+        return True
 
 
 def start_rpc_server(host="localhost", port=9875):

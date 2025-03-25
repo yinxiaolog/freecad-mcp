@@ -1,9 +1,11 @@
+import json
 import logging
 import xmlrpc.client
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Dict, Any
 
-from mcp.server.fastmcp import FastMCP, Context, Image
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.types import TextContent, ImageContent
 
 # Configure logging
 logging.basicConfig(
@@ -36,6 +38,9 @@ class FreeCADConnection:
 
     def execute_code(self, code: str) -> dict[str, Any]:
         return self.server.execute_code(code)
+
+    def get_active_screenshot(self) -> str:
+        return self.server.get_active_screenshot()
 
     def get_objects(self, doc_name: str) -> list[dict[str, Any]]:
         return self.server.get_objects(doc_name)
@@ -95,7 +100,7 @@ def get_freecad_connection():
 
 
 @mcp.tool()
-def create_document(ctx: Context, name: str) -> str:
+def create_document(ctx: Context, name: str) -> list[TextContent]:
     """Create a new document in FreeCAD.
 
     Args:
@@ -116,12 +121,18 @@ def create_document(ctx: Context, name: str) -> str:
     try:
         res = freecad.create_document(name)
         if res["success"]:
-            return f"Document '{res['document_name']}' created successfully"
+            return [
+                TextContent(type="text", text=f"Document '{res['document_name']}' created successfully")
+            ]
         else:
-            return f"Failed to create document: {res['error']}"
+            return [
+                TextContent(type="text", text=f"Failed to create document: {res['error']}")
+            ]
     except Exception as e:
         logger.error(f"Failed to create document: {str(e)}")
-        return f"Failed to create document: {str(e)}"
+        return [
+            TextContent(type="text", text=f"Failed to create document: {str(e)}")
+        ]
 
 
 @mcp.tool()
@@ -131,7 +142,7 @@ def create_object(
     obj_type: str,
     obj_name: str,
     obj_properties: dict[str, Any] = None,
-) -> str:
+) -> list[TextContent | ImageContent]:
     """Create a new object in FreeCAD.
 
     Args:
@@ -179,18 +190,26 @@ def create_object(
         obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties or {}}
         res = freecad.create_object(doc_name, obj_data)
         if res["success"]:
-            return f"Object '{res['object_name']}' created successfully"
+            screenshot = freecad.get_active_screenshot()
+            return [
+                TextContent(type="text", text=f"Object '{res['object_name']}' created successfully"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
+            ]
         else:
-            return f"Failed to create object: {res['error']}"
+            return [
+                TextContent(type="text", text=f"Failed to create object: {res['error']}")
+            ]
     except Exception as e:
         logger.error(f"Failed to create object: {str(e)}")
-        return f"Failed to create object: {str(e)}"
+        return [
+            TextContent(type="text", text=f"Failed to create object: {str(e)}")
+        ]
 
 
 @mcp.tool()
 def edit_object(
     ctx: Context, doc_name: str, obj_name: str, obj_properties: dict[str, Any]
-) -> str:
+) -> list[TextContent | ImageContent]:
     """Edit an object in FreeCAD.
     This tool is used when the `create_object` tool cannot handle the object creation.
 
@@ -206,16 +225,24 @@ def edit_object(
     try:
         res = freecad.edit_object(doc_name, obj_name, obj_properties)
         if res["success"]:
-            return f"Object '{res['object_name']}' edited successfully"
+            screenshot = freecad.get_active_screenshot()
+            return [
+                TextContent(type="text", text=f"Object '{res['object_name']}' edited successfully"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
+            ]
         else:
-            return f"Failed to edit object: {res['error']}"
+            return [
+                TextContent(type="text", text=f"Failed to edit object: {res['error']}")
+            ]
     except Exception as e:
         logger.error(f"Failed to edit object: {str(e)}")
-        return f"Failed to edit object: {str(e)}"
+        return [
+            TextContent(type="text", text=f"Failed to edit object: {str(e)}")
+        ]
 
 
 @mcp.tool()
-def delete_object(ctx: Context, doc_name: str, obj_name: str) -> str:
+def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent | ImageContent]:
     """Delete an object in FreeCAD.
 
     Args:
@@ -229,16 +256,24 @@ def delete_object(ctx: Context, doc_name: str, obj_name: str) -> str:
     try:
         res = freecad.delete_object(doc_name, obj_name)
         if res["success"]:
-            return f"Object '{res['object_name']}' deleted successfully"
+            screenshot = freecad.get_active_screenshot()
+            return [
+                TextContent(type="text", text=f"Object '{res['object_name']}' deleted successfully"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
+            ]
         else:
-            return f"Failed to delete object: {res['error']}"
+            return [
+                TextContent(type="text", text=f"Failed to delete object: {res['error']}")
+            ]
     except Exception as e:
         logger.error(f"Failed to delete object: {str(e)}")
-        return f"Failed to delete object: {str(e)}"
+        return [
+            TextContent(type="text", text=f"Failed to delete object: {str(e)}")
+        ]
 
 
 @mcp.tool()
-def execute_code(ctx: Context, code: str) -> str:
+def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
     """Execute arbitrary Python code in FreeCAD.
 
     Args:
@@ -251,16 +286,24 @@ def execute_code(ctx: Context, code: str) -> str:
     try:
         res = freecad.execute_code(code)
         if res["success"]:
-            return f"Code executed successfully: {res['message']}"
+            screenshot = freecad.get_active_screenshot()
+            return [
+                TextContent(type="text", text=f"Code executed successfully: {res['message']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
+            ]
         else:
-            return f"Failed to execute code: {res['error']}"
+            return [
+                TextContent(type="text", text=f"Failed to execute code: {res['error']}")
+            ]
     except Exception as e:
         logger.error(f"Failed to execute code: {str(e)}")
-        return f"Failed to execute code: {str(e)}"
+        return [
+            TextContent(type="text", text=f"Failed to execute code: {str(e)}")
+        ]
 
 
 @mcp.tool()
-def insert_part_from_library(ctx: Context, relative_path: str) -> str:
+def insert_part_from_library(ctx: Context, relative_path: str) -> list[TextContent | ImageContent]:
     """Insert a part from the parts library addon.
 
     Args:
@@ -273,12 +316,20 @@ def insert_part_from_library(ctx: Context, relative_path: str) -> str:
     try:
         res = freecad.insert_part_from_library(relative_path)
         if res["success"]:
-            return f"Part inserted from library: {res['message']}"
+            screenshot = freecad.get_active_screenshot()
+            return [
+                TextContent(type="text", text=f"Part inserted from library: {res['message']}"),
+                ImageContent(type="image", data=screenshot, mimeType="image/png")
+            ]
         else:
-            return f"Failed to insert part from library: {res['error']}"
+            return [
+                TextContent(type="text", text=f"Failed to insert part from library: {res['error']}")
+            ]
     except Exception as e:
         logger.error(f"Failed to insert part from library: {str(e)}")
-        return f"Failed to insert part from library: {str(e)}"
+        return [
+            TextContent(type="text", text=f"Failed to insert part from library: {str(e)}")
+        ]
 
 
 @mcp.tool()
@@ -294,10 +345,16 @@ def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
     """
     freecad = get_freecad_connection()
     try:
-        return freecad.get_objects(doc_name)
+        screenshot = freecad.get_active_screenshot()
+        return [
+            TextContent(type="text", text=json.dumps(freecad.get_objects(doc_name))),
+            ImageContent(type="image", data=screenshot, mimeType="image/png")
+        ]
     except Exception as e:
         logger.error(f"Failed to get objects: {str(e)}")
-        return []
+        return [
+            TextContent(type="text", text=f"Failed to get objects: {str(e)}")
+        ]
 
 
 @mcp.tool()
@@ -314,10 +371,16 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
     """
     freecad = get_freecad_connection()
     try:
-        return freecad.get_object(doc_name, obj_name)
+        screenshot = freecad.get_active_screenshot()
+        return [
+            TextContent(type="text", text=json.dumps(freecad.get_object(doc_name, obj_name))),
+            ImageContent(type="image", data=screenshot, mimeType="image/png")
+        ]
     except Exception as e:
         logger.error(f"Failed to get object: {str(e)}")
-        return {}
+        return [
+            TextContent(type="text", text=f"Failed to get object: {str(e)}")
+        ]
 
 
 @mcp.tool()
@@ -327,9 +390,13 @@ def get_parts_list(ctx: Context) -> list[str]:
     freecad = get_freecad_connection()
     parts = freecad.get_parts_list()
     if parts:
-        return parts
+        return [
+            TextContent(type="text", text=json.dumps(parts))
+        ]
     else:
-        return f"No parts found in the parts library. You must add parts_library addon."
+        return [
+            TextContent(type="text", text=f"No parts found in the parts library. You must add parts_library addon.")
+        ]
 
 
 @mcp.prompt()
