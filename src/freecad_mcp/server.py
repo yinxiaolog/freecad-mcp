@@ -2,7 +2,7 @@ import json
 import logging
 import xmlrpc.client
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Dict, Any
+from typing import AsyncIterator, Dict, Any, Literal
 
 from mcp.server.fastmcp import FastMCP, Context
 from mcp.types import TextContent, ImageContent
@@ -39,8 +39,8 @@ class FreeCADConnection:
     def execute_code(self, code: str) -> dict[str, Any]:
         return self.server.execute_code(code)
 
-    def get_active_screenshot(self) -> str:
-        return self.server.get_active_screenshot()
+    def get_active_screenshot(self, view_name: str = "Isometric") -> str:
+        return self.server.get_active_screenshot(view_name)
 
     def get_objects(self, doc_name: str) -> list[dict[str, Any]]:
         return self.server.get_objects(doc_name)
@@ -304,6 +304,31 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
         return [
             TextContent(type="text", text=f"Failed to execute code: {str(e)}")
         ]
+
+
+@mcp.tool()
+def get_view(ctx: Context, view_name: Literal["Isometric", "Front", "Top", "Right", "Back", "Left", "Bottom", "Dimetric", "Trimetric"]) -> list[ImageContent]:
+    """Get a screenshot of the active view.
+
+    Args:
+        view_name: The name of the view to get the screenshot of.
+        The following views are available:
+        - "Isometric"
+        - "Front"
+        - "Top"
+        - "Right"
+        - "Back"
+        - "Left"
+        - "Bottom"
+        - "Dimetric"
+        - "Trimetric"
+
+    Returns:
+        A screenshot of the active view.
+    """
+    freecad = get_freecad_connection()
+    screenshot = freecad.get_active_screenshot(view_name)
+    return [ImageContent(type="image", data=screenshot, mimeType="image/png")]
 
 
 @mcp.tool()

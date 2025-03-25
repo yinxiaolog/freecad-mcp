@@ -184,9 +184,9 @@ class FreeCADRPC:
     def get_parts_list(self):
         return get_parts_list()
 
-    def get_active_screenshot(self) -> str:
+    def get_active_screenshot(self, view_name: str = "Isometric") -> str:
         temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        rpc_request_queue.put(lambda: self._save_active_screenshot(temp_file.name))
+        rpc_request_queue.put(lambda: self._save_active_screenshot(temp_file.name, view_name))
         res = rpc_response_queue.get()
         if res is True:
             with open(temp_file.name, "rb") as image_file:
@@ -256,10 +256,29 @@ class FreeCADRPC:
         except Exception as e:
             return str(e)
 
-    def _save_active_screenshot(self, save_path: str):
+    def _save_active_screenshot(self, save_path: str, view_name: str = "Isometric"):
         try:
             view = FreeCADGui.ActiveDocument.ActiveView
-            view.viewIsometric()
+            if view_name == "Isometric":
+                view.viewIsometric()
+            elif view_name == "Front":
+                view.viewFront()
+            elif view_name == "Top":
+                view.viewTop()
+            elif view_name == "Right":
+                view.viewRight()
+            elif view_name == "Back":
+                view.viewBack()
+            elif view_name == "Left":
+                view.viewLeft()
+            elif view_name == "Bottom":
+                view.viewBottom()
+            elif view_name == "Dimetric":
+                view.viewDimetric()
+            elif view_name == "Trimetric":
+                view.viewTrimetric()
+            else:
+                raise ValueError(f"Invalid view name: {view_name}")
             view.fitAll()
             view.saveImage(save_path, 1)
             return True
