@@ -163,7 +163,22 @@ def create_object(
             "obj_type": "Part::Cylinder",
             "obj_properties": {
                 "Height": 30,
-                "Radius": 10
+                "Radius": 10,
+                "Placement": {
+                    "Base": {
+                        "x": 10,
+                        "y": 10,
+                        "z": 0
+                    },
+                    "Rotation": {
+                        "Axis": {
+                            "x": 0,
+                            "y": 0,
+                            "z": 1
+                        },
+                        "Angle": 45
+                    }
+                }
             }
         }
         ```
