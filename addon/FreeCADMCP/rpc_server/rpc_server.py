@@ -42,10 +42,9 @@ class Object:
 def set_object_property(
     doc: FreeCAD.Document, obj: FreeCAD.DocumentObject, properties: dict[str, Any]
 ):
-    for prop in properties:
-        if prop in obj.PropertiesList:
-            val = properties[prop]
-            try:
+    for prop, val in properties.items():
+        try:
+            if prop in obj.PropertiesList:
                 if prop == "Placement" and isinstance(val, dict):
                     if "Base" in val:
                         pos = val["Base"]
@@ -88,18 +87,25 @@ def set_object_property(
                     else:
                         raise ValueError(f"Referenced object '{val}' not found.")
 
-                # ShapeColor is a property of the ViewObject
-                elif prop == "ShapeColor" and isinstance(val, (list, tuple)):
-                    setattr(obj.ViewObject, prop, val)
-
-                elif prop == "ViewObject" and isinstance(val, dict):
-                    for k, v in val.items():
-                        setattr(obj.ViewObject, k, v)
                 else:
                     setattr(obj, prop, val)
 
-            except Exception as e:
-                FreeCAD.Console.PrintError(f"Property '{prop}' assignment error: {e}\n")
+            # ShapeColor is a property of the ViewObject
+            elif prop == "ShapeColor" and isinstance(val, (list, tuple)):
+                setattr(obj.ViewObject, prop, (val[0], val[1], val[2], val[3]))
+
+            elif prop == "ViewObject" and isinstance(val, dict):
+                for k, v in val.items():
+                    if k == "ShapeColor":
+                        setattr(obj.ViewObject, k, (v[0], v[1], v[2], v[3]))
+                    else:
+                        setattr(obj.ViewObject, k, v)
+
+            else:
+                setattr(obj, prop, val)
+
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"Property '{prop}' assignment error: {e}\n")
 
 
 class FreeCADRPC:
