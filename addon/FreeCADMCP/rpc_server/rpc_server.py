@@ -42,8 +42,8 @@ class Object:
 def set_object_property(
     doc: FreeCAD.Document, obj: FreeCAD.DocumentObject, properties: dict[str, Any]
 ):
-    for prop in obj.PropertiesList:
-        if prop in properties:
+    for prop in properties:
+        if prop in obj.PropertiesList:
             val = properties[prop]
             try:
                 if prop == "Placement" and isinstance(val, dict):
@@ -88,6 +88,13 @@ def set_object_property(
                     else:
                         raise ValueError(f"Referenced object '{val}' not found.")
 
+                # ShapeColor is a property of the ViewObject
+                elif prop == "ShapeColor" and isinstance(val, (list, tuple)):
+                    setattr(obj.ViewObject, prop, val)
+
+                elif prop == "ViewObject" and isinstance(val, dict):
+                    for k, v in val.items():
+                        setattr(obj.ViewObject, k, v)
                 else:
                     setattr(obj, prop, val)
 
@@ -249,10 +256,13 @@ class FreeCADRPC:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
             return f"Document '{doc_name}' not found.\n"
 
-        doc.removeObject(obj_name)
-        doc.recompute()
-        FreeCAD.Console.PrintMessage(f"Object '{obj_name}' deleted via RPC.\n")
-        return True
+        try:
+            doc.removeObject(obj_name)
+            doc.recompute()
+            FreeCAD.Console.PrintMessage(f"Object '{obj_name}' deleted via RPC.\n")
+            return True
+        except Exception as e:
+            return str(e)
 
     def _insert_part_from_library(self, relative_path):
         try:

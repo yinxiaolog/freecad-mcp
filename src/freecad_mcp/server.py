@@ -178,6 +178,9 @@ def create_object(
                         },
                         "Angle": 45
                     }
+                },
+                "ViewObject": {
+                    "ShapeColor": [0.5, 0.5, 0.5, 1.0]
                 }
             }
         }
