@@ -16,7 +16,7 @@ logger = logging.getLogger("FreeCADMCPserver")
 
 class FreeCADConnection:
     def __init__(self, host: str = "localhost", port: int = 9875):
-        self.server = xmlrpc.client.ServerProxy(f"http://{host}:{port}")
+        self.server = xmlrpc.client.ServerProxy(f"http://{host}:{port}", allow_none=True)
 
     def ping(self) -> bool:
         return self.server.ping()
@@ -144,6 +144,7 @@ def create_object(
     obj_properties: dict[str, Any] = None,
 ) -> list[TextContent | ImageContent]:
     """Create a new object in FreeCAD.
+    Object type is starts with "Part::" or "Draft::" or "PartDesign::" or "Fem::".
 
     Args:
         doc_name: The name of the document to create the object in.
@@ -199,7 +200,58 @@ def create_object(
         ```json
         {
             "doc_name": "MyFEMAnalysis",
-            "obj_name": "FEMAnalysis",
+            "obj_name": "FemAnalysis",
+            "obj_type": "Fem::AnalysisPython",
+        }
+        ```
+
+        If you want to create a FEM constraint, you can use the following data.
+        ```json
+        {
+            "doc_name": "MyFEMConstraint",
+            "obj_name": "FemConstraint",
+            "obj_type": "Fem::ConstraintFixed",
+            "obj_properties": {
+                "References": [
+                    {
+                        "object_name": "MyObject",
+                        "face": "Face1"
+                    }
+                ]
+            }
+        }
+        ```
+
+        If you want to create a FEM mechanical material, you can use the following data.
+        ```json
+        {
+            "doc_name": "MyFEMAnalysis",
+            "obj_name": "FemMechanicalMaterial",
+            "obj_type": "Fem::MaterialCommon",
+            "obj_properties": {
+                "Material": {
+                    "Name": "MyMaterial",
+                    "Density": "7900 kg/m^3",
+                    "YoungModulus": "210 GPa",
+                    "PoissonRatio": 0.3
+                }
+            }
+        }
+        ```
+
+        If you want to create a FEM mesh, you can use the following data.
+        The `Part` property is required.
+        ```json
+        {
+            "doc_name": "MyFEMMesh",
+            "obj_name": "FemMesh",
+            "obj_type": "Fem::FemMeshGmsh",
+            "obj_properties": {
+                "Part": "MyObject",
+                "ElementSizeMax": 10,
+                "ElementSizeMin": 0.1,
+                "MeshAlgorithm": 2
+            }
         }
         ```
     """
@@ -301,7 +353,7 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
         code: The Python code to execute.
 
     Returns:
-        A message indicating the success or failure of the code execution and a screenshot of the object.
+        A message indicating the success or failure of the code execution, the output of the code execution, and a screenshot of the object.
     """
     freecad = get_freecad_connection()
     try:

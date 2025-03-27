@@ -1,8 +1,11 @@
 import FreeCAD
 import FreeCADGui
+import ObjectsFem
 
+import contextlib
 import queue
 import base64
+import io
 import os
 import tempfile
 import threading
@@ -87,9 +90,18 @@ def set_object_property(
                     else:
                         raise ValueError(f"Referenced object '{val}' not found.")
 
+                elif prop == "References" and isinstance(val, list):
+                    refs = []
+                    for ref_name, face in val:
+                        ref_obj = doc.getObject(ref_name)
+                        if ref_obj:
+                            refs.append((ref_obj, face))
+                        else:
+                            raise ValueError(f"Referenced object '{ref_name}' not found.")
+                    setattr(obj, prop, refs)
+
                 else:
                     setattr(obj, prop, val)
-
             # ShapeColor is a property of the ViewObject
             elif prop == "ShapeColor" and isinstance(val, (list, tuple)):
                 setattr(obj.ViewObject, prop, (float(val[0]), float(val[1]), float(val[2]), float(val[3])))
@@ -156,9 +168,11 @@ class FreeCADRPC:
             return {"success": False, "error": res}
 
     def execute_code(self, code: str) -> dict[str, Any]:
+        output_buffer = io.StringIO()
         def task():
             try:
-                exec(code, globals())
+                with contextlib.redirect_stdout(output_buffer):
+                    exec(code, globals())
                 FreeCAD.Console.PrintMessage("Python code executed successfully.\n")
                 return True
             except Exception as e:
@@ -170,7 +184,10 @@ class FreeCADRPC:
         rpc_request_queue.put(task)
         res = rpc_response_queue.get()
         if res is True:
-            return {"success": True, "message": "Python code execution scheduled."}
+            return {
+                "success": True,
+                "message": "Python code execution scheduled. \nOutput: " + output_buffer.getvalue()
+            }
         else:
             return {"success": False, "error": res}
 
@@ -224,12 +241,56 @@ class FreeCADRPC:
         doc = FreeCAD.getDocument(doc_name)
         if doc:
             try:
-                res = doc.addObject(obj.type, obj.name)
-                set_object_property(doc, res, obj.properties)
+                if obj.type == "Fem::FemMeshGmsh":
+                    from femmesh.gmshtools import GmshTools
+                    res = doc.Analysis.addObject(ObjectsFem.makeMeshGmsh(doc, obj.name))
+                    if "Part" in obj.properties:
+                        target_obj = doc.getObject(obj.properties["Part"])
+                        if target_obj:
+                            res.Part = target_obj
+                        else:
+                            raise ValueError(f"Referenced object '{obj.properties['Part']}' not found.")
+                        del obj.properties["Part"]
+                    else:
+                        raise ValueError("'Part' property not found in properties.")
+
+                    for param, value in obj.properties.items():
+                        if hasattr(res, param):
+                            setattr(res, param, value)
+                    doc.recompute()
+
+                    gmsh_tools = GmshTools(res)
+                    gmsh_tools.create_mesh()
+                    FreeCAD.Console.PrintMessage(
+                        f"FEM Mesh '{res.Name}' generated successfully in '{doc_name}'.\n"
+                    )
+                elif obj.type.startswith("Fem::"):
+                    fem_make_methods = {
+                        "MaterialCommon": ObjectsFem.makeMaterialSolid,
+                        "AnalysisPython": ObjectsFem.makeAnalysis,
+                    }
+                    obj_type_short = obj.type.split("::")[1]
+                    method_name = "make" + obj_type_short
+                    make_method = fem_make_methods.get(obj_type_short, getattr(ObjectsFem, method_name, None))
+
+                    if callable(make_method):
+                        res = make_method(doc, obj.name)
+                        set_object_property(doc, res, obj.properties)
+                        FreeCAD.Console.PrintMessage(
+                            f"FEM object '{res.Name}' created with '{method_name}'.\n"
+                        )
+                    else:
+                        raise ValueError(f"No creation method '{method_name}' found in ObjectsFem.")
+                    if obj.type != "Fem::Analysis":
+                        doc.Analysis.addObject(res)
+                else:
+                    res = doc.addObject(obj.type, obj.name)
+                    set_object_property(doc, res, obj.properties)
+                    FreeCAD.Console.PrintMessage(
+                        f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
+                    )
+ 
                 doc.recompute()
-                FreeCAD.Console.PrintMessage(
-                    f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
-                )
                 return True
             except Exception as e:
                 return str(e)
@@ -249,6 +310,21 @@ class FreeCADRPC:
             return f"Object '{obj.name}' not found in document '{doc_name}'.\n"
 
         try:
+            # For Fem::ConstraintFixed
+            if hasattr(obj_ins, "References") and "References" in obj.properties:
+                refs = []
+                for ref_name, face in obj.properties["References"]:
+                    ref_obj = doc.getObject(ref_name)
+                    if ref_obj:
+                        refs.append((ref_obj, face))
+                    else:
+                        raise ValueError(f"Referenced object '{ref_name}' not found.")
+                obj_ins.References = refs
+                FreeCAD.Console.PrintMessage(
+                    f"References updated for '{obj.name}' in '{doc_name}'.\n"
+                )
+                # delete References from properties
+                del obj.properties["References"]
             set_object_property(doc, obj_ins, obj.properties)
             doc.recompute()
             FreeCAD.Console.PrintMessage(f"Object '{obj.name}' updated via RPC.\n")
