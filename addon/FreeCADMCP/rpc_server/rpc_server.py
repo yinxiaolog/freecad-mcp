@@ -92,12 +92,12 @@ def set_object_property(
 
             # ShapeColor is a property of the ViewObject
             elif prop == "ShapeColor" and isinstance(val, (list, tuple)):
-                setattr(obj.ViewObject, prop, (val[0], val[1], val[2], val[3]))
+                setattr(obj.ViewObject, prop, (float(val[0]), float(val[1]), float(val[2]), float(val[3])))
 
             elif prop == "ViewObject" and isinstance(val, dict):
                 for k, v in val.items():
                     if k == "ShapeColor":
-                        setattr(obj.ViewObject, k, (v[0], v[1], v[2], v[3]))
+                        setattr(obj.ViewObject, k, (float(v[0]), float(v[1]), float(v[2]), float(v[3])))
                     else:
                         setattr(obj.ViewObject, k, v)
 
