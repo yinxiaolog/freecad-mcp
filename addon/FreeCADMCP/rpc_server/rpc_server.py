@@ -151,7 +151,7 @@ class FreeCADRPC:
         rpc_request_queue.put(lambda: self._delete_object_gui(doc_name, obj_name))
         res = rpc_response_queue.get()
         if res is True:
-            return {"success": True, "message": "Object deleted successfully."}
+            return {"success": True, "object_name": obj_name}
         else:
             return {"success": False, "error": res}
 
