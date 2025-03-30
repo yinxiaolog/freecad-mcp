@@ -39,6 +39,7 @@ def process_gui_tasks():
 class Object:
     name: str
     type: str | None = None
+    analysis: str | None = None
     properties: dict[str, Any] = field(default_factory=dict)
 
 
@@ -138,6 +139,7 @@ class FreeCADRPC:
         obj = Object(
             name=obj_data.get("Name", "New_Object"),
             type=obj_data["Type"],
+            analysis=obj_data.get("Analysis", None),
             properties=obj_data.get("Properties", {}),
         )
         rpc_request_queue.put(lambda: self._create_object_gui(doc_name, obj))
@@ -241,9 +243,9 @@ class FreeCADRPC:
         doc = FreeCAD.getDocument(doc_name)
         if doc:
             try:
-                if obj.type == "Fem::FemMeshGmsh":
+                if obj.type == "Fem::FemMeshGmsh" and obj.analysis:
                     from femmesh.gmshtools import GmshTools
-                    res = doc.Analysis.addObject(ObjectsFem.makeMeshGmsh(doc, obj.name))
+                    res = getattr(doc, obj.analysis).addObject(ObjectsFem.makeMeshGmsh(doc, obj.name))[0]
                     if "Part" in obj.properties:
                         target_obj = doc.getObject(obj.properties["Part"])
                         if target_obj:
@@ -281,8 +283,8 @@ class FreeCADRPC:
                         )
                     else:
                         raise ValueError(f"No creation method '{method_name}' found in ObjectsFem.")
-                    if obj.type != "Fem::Analysis":
-                        doc.Analysis.addObject(res)
+                    if obj.type != "Fem::AnalysisPython" and obj.analysis:
+                        getattr(doc, obj.analysis).addObject(res)
                 else:
                     res = doc.addObject(obj.type, obj.name)
                     set_object_property(doc, res, obj.properties)

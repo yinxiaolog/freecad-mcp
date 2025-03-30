@@ -141,6 +141,7 @@ def create_object(
     doc_name: str,
     obj_type: str,
     obj_name: str,
+    analysis_name: str | None = None,
     obj_properties: dict[str, Any] = None,
 ) -> list[TextContent | ImageContent]:
     """Create a new object in FreeCAD.
@@ -211,6 +212,7 @@ def create_object(
             "doc_name": "MyFEMConstraint",
             "obj_name": "FemConstraint",
             "obj_type": "Fem::ConstraintFixed",
+            "analysis_name": "MyFEMAnalysis",
             "obj_properties": {
                 "References": [
                     {
@@ -228,6 +230,7 @@ def create_object(
             "doc_name": "MyFEMAnalysis",
             "obj_name": "FemMechanicalMaterial",
             "obj_type": "Fem::MaterialCommon",
+            "analysis_name": "MyFEMAnalysis",
             "obj_properties": {
                 "Material": {
                     "Name": "MyMaterial",
@@ -246,6 +249,7 @@ def create_object(
             "doc_name": "MyFEMMesh",
             "obj_name": "FemMesh",
             "obj_type": "Fem::FemMeshGmsh",
+            "analysis_name": "MyFEMAnalysis",
             "obj_properties": {
                 "Part": "MyObject",
                 "ElementSizeMax": 10,
@@ -257,7 +261,7 @@ def create_object(
     """
     freecad = get_freecad_connection()
     try:
-        obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties or {}}
+        obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties or {}, "Analysis": analysis_name}
         res = freecad.create_object(doc_name, obj_data)
         screenshot = freecad.get_active_screenshot()
         if res["success"]:
