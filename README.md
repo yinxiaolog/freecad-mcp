@@ -12,6 +12,15 @@ This repository is a FreeCAD MCP that allows you to control FreeCAD from Claude 
 
 ![demo](./assets/make_toycar4.gif)
 
+### Design a part from 2D drawing
+
+#### Input 2D drawing
+
+![input](./assets/b9-1.png)
+
+#### Demo
+![demo](./assets/from_2ddrawing.gif)
+
 ## Install addon
 
 FreeCAD Addon directory is
@@ -20,6 +29,12 @@ FreeCAD Addon directory is
 * Linux: `~/.FreeCAD/Mod/` or `~/snap/freecad/common/Mod/` (if you install FreeCAD from snap)
 
 Please put `addon/FreeCADMCP` directory to the addon directory.
+
+```bash
+git clone https://github.com/neka-nat/freecad-mcp.git
+cd freecad-mcp
+cp -r addon/FreeCADMCP ~/.FreeCAD/Mod/
+```
 
 When you install addon, you need to restart FreeCAD.
 You can select "MCP Addon" from Workbench list and use it.
