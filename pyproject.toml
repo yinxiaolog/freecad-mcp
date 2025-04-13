@@ -1,6 +1,6 @@
 [project]
 name = "freecad-mcp"
-version = "0.1.9"
+version = "0.1.9.1"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -14,6 +14,9 @@ dependencies = [
 
 [project.scripts]
 freecad-mcp = "freecad_mcp.server:main"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["assets", "results"]
 
 [build-system]
 requires = ["hatchling"]
