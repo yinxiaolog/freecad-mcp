@@ -64,6 +64,23 @@ For user.
 }
 ```
 
+If you want to save token, you can set `only_text_feedback` to `true` and use only text feedback.
+
+```json
+{
+  "mcpServers": {
+    "freecad": {
+      "command": "uvx",
+      "args": [
+        "freecad-mcp",
+        "--only-text-feedback"
+      ]
+    }
+  }
+}
+```
+
+
 For developer.
 First, you need clone this repository.
 

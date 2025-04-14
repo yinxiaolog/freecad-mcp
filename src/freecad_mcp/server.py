@@ -14,6 +14,9 @@ logging.basicConfig(
 logger = logging.getLogger("FreeCADMCPserver")
 
 
+_only_text_feedback = False
+
+
 class FreeCADConnection:
     def __init__(self, host: str = "localhost", port: int = 9875):
         self.server = xmlrpc.client.ServerProxy(f"http://{host}:{port}", allow_none=True)
@@ -267,13 +270,15 @@ def create_object(
         if res["success"]:
             return [
                 TextContent(type="text", text=f"Object '{res['object_name']}' created successfully"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
         else:
             return [
                 TextContent(type="text", text=f"Failed to create object: {res['error']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
     except Exception as e:
         logger.error(f"Failed to create object: {str(e)}")
         return [
@@ -303,13 +308,15 @@ def edit_object(
         if res["success"]:
             return [
                 TextContent(type="text", text=f"Object '{res['object_name']}' edited successfully"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
         else:
             return [
                 TextContent(type="text", text=f"Failed to edit object: {res['error']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
     except Exception as e:
         logger.error(f"Failed to edit object: {str(e)}")
         return [
@@ -335,13 +342,15 @@ def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextConten
         if res["success"]:
             return [
                 TextContent(type="text", text=f"Object '{res['object_name']}' deleted successfully"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
         else:
             return [
                 TextContent(type="text", text=f"Failed to delete object: {res['error']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
     except Exception as e:
         logger.error(f"Failed to delete object: {str(e)}")
         return [
@@ -366,13 +375,15 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
         if res["success"]:
             return [
                 TextContent(type="text", text=f"Code executed successfully: {res['message']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
         else:
             return [
                 TextContent(type="text", text=f"Failed to execute code: {res['error']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
     except Exception as e:
         logger.error(f"Failed to execute code: {str(e)}")
         return [
@@ -422,13 +433,15 @@ def insert_part_from_library(ctx: Context, relative_path: str) -> list[TextConte
         if res["success"]:
             return [
                 TextContent(type="text", text=f"Part inserted from library: {res['message']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
         else:
             return [
                 TextContent(type="text", text=f"Failed to insert part from library: {res['error']}"),
-                ImageContent(type="image", data=screenshot, mimeType="image/png")
-            ]
+            ] + (
+                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+            )
     except Exception as e:
         logger.error(f"Failed to insert part from library: {str(e)}")
         return [
@@ -452,8 +465,9 @@ def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
         screenshot = freecad.get_active_screenshot()
         return [
             TextContent(type="text", text=json.dumps(freecad.get_objects(doc_name))),
-            ImageContent(type="image", data=screenshot, mimeType="image/png")
-        ]
+        ] + (
+            [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+        )
     except Exception as e:
         logger.error(f"Failed to get objects: {str(e)}")
         return [
@@ -478,8 +492,9 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
         screenshot = freecad.get_active_screenshot()
         return [
             TextContent(type="text", text=json.dumps(freecad.get_object(doc_name, obj_name))),
-            ImageContent(type="image", data=screenshot, mimeType="image/png")
-        ]
+        ] + (
+            [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
+        )
     except Exception as e:
         logger.error(f"Failed to get object: {str(e)}")
         return [
@@ -537,4 +552,11 @@ Only revert to basic creation methods in the following cases:
 
 def main():
     """Run the MCP server"""
+    global _only_text_feedback
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--only-text-feedback", action="store_true", help="Only return text feedback")
+    args = parser.parse_args()
+    _only_text_feedback = args.only_text_feedback
+    logger.info(f"Only text feedback: {_only_text_feedback}")
     mcp.run()
