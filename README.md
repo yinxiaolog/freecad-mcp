@@ -19,7 +19,11 @@ This repository is a FreeCAD MCP that allows you to control FreeCAD from Claude 
 ![input](./assets/b9-1.png)
 
 #### Demo
+
 ![demo](./assets/from_2ddrawing.gif)
+
+This is the conversation history.
+https://claude.ai/share/7b48fd60-68ba-46fb-bb21-2fbb17399b48
 
 ## Install addon
 
