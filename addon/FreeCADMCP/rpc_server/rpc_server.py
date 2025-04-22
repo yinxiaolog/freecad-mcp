@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from xmlrpc.server import SimpleXMLRPCServer
 
-from PySide2.QtCore import QTimer
+from PySide import QtCore
 
 from .parts_library import get_parts_list, insert_part_from_library
 from .serialize import serialize_object
@@ -32,7 +32,7 @@ def process_gui_tasks():
         res = task()
         if res is not None:
             rpc_response_queue.put(res)
-    QTimer.singleShot(500, process_gui_tasks)
+    QtCore.QTimer.singleShot(500, process_gui_tasks)
 
 
 @dataclass
@@ -403,7 +403,7 @@ def start_rpc_server(host="localhost", port=9875):
     rpc_server_thread = threading.Thread(target=server_loop, daemon=True)
     rpc_server_thread.start()
 
-    QTimer.singleShot(500, process_gui_tasks)
+    QtCore.QTimer.singleShot(500, process_gui_tasks)
 
     return f"RPC Server started at {host}:{port}."
 
