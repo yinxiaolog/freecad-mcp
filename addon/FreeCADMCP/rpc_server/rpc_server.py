@@ -222,15 +222,24 @@ class FreeCADRPC:
         return get_parts_list()
 
     def get_active_screenshot(self, view_name: str = "Isometric") -> str:
-        temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        rpc_request_queue.put(lambda: self._save_active_screenshot(temp_file.name, view_name))
+        fd, tmp_path = tempfile.mkstemp(suffix=".png")
+        os.close(fd)
+        rpc_request_queue.put(
+            lambda: self._save_active_screenshot(tmp_path, view_name)
+        )
         res = rpc_response_queue.get()
         if res is True:
-            with open(temp_file.name, "rb") as image_file:
-                image_bytes = image_file.read()
-                os.remove(temp_file.name)
-                return base64.b64encode(image_bytes).decode("utf-8")
+            try:
+                with open(tmp_path, "rb") as image_file:
+                    image_bytes = image_file.read()
+                    encoded = base64.b64encode(image_bytes).decode("utf-8")
+            finally:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            return encoded
         else:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
             return None
 
     def _create_document_gui(self, name):
