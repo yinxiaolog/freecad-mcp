@@ -42,8 +42,41 @@ class FreeCADConnection:
     def execute_code(self, code: str) -> dict[str, Any]:
         return self.server.execute_code(code)
 
-    def get_active_screenshot(self, view_name: str = "Isometric") -> str:
-        return self.server.get_active_screenshot(view_name)
+    def get_active_screenshot(self, view_name: str = "Isometric") -> str | None:
+        try:
+            # Check if we're in a view that supports screenshots
+            result = self.server.execute_code("""
+import FreeCAD
+import FreeCADGui
+
+if FreeCAD.Gui.ActiveDocument and FreeCAD.Gui.ActiveDocument.ActiveView:
+    view_type = type(FreeCAD.Gui.ActiveDocument.ActiveView).__name__
+    
+    # These view types don't support screenshots
+    unsupported_views = ['SpreadsheetGui::SheetView', 'DrawingGui::DrawingView', 'TechDrawGui::MDIViewPage']
+    
+    if view_type in unsupported_views or not hasattr(FreeCAD.Gui.ActiveDocument.ActiveView, 'saveImage'):
+        print("Current view does not support screenshots")
+        False
+    else:
+        print(f"Current view supports screenshots: {view_type}")
+        True
+else:
+    print("No active view")
+    False
+""")
+
+            # If the view doesn't support screenshots, return None
+            if not result.get("success", False) or "Current view does not support screenshots" in result.get("message", ""):
+                logger.info("Screenshot unavailable in current view (likely Spreadsheet or TechDraw view)")
+                return None
+
+            # Otherwise, try to get the screenshot
+            return self.server.get_active_screenshot(view_name)
+        except Exception as e:
+            # Log the error but return None instead of raising an exception
+            logger.error(f"Error getting screenshot: {e}")
+            return None
 
     def get_objects(self, doc_name: str) -> list[dict[str, Any]]:
         return self.server.get_objects(doc_name)
@@ -100,6 +133,21 @@ def get_freecad_connection():
                 "Failed to connect to FreeCAD. Make sure the FreeCAD addon is running."
             )
     return _freecad_connection
+
+
+# Helper function to safely add screenshot to response
+def add_screenshot_if_available(response, screenshot):
+    """Safely add screenshot to response only if it's available"""
+    if screenshot is not None and not _only_text_feedback:
+        response.append(ImageContent(type="image", data=screenshot, mimeType="image/png"))
+    elif not _only_text_feedback:
+        # Add an informative message that will be seen by the AI model and user
+        response.append(TextContent(
+            type="text", 
+            text="Note: Visual preview is unavailable in the current view type (such as TechDraw or Spreadsheet). "
+                 "Switch to a 3D view to see visual feedback."
+        ))
+    return response
 
 
 @mcp.tool()
@@ -267,18 +315,17 @@ def create_object(
         obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties or {}, "Analysis": analysis_name}
         res = freecad.create_object(doc_name, obj_data)
         screenshot = freecad.get_active_screenshot()
+        
         if res["success"]:
-            return [
+            response = [
                 TextContent(type="text", text=f"Object '{res['object_name']}' created successfully"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
         else:
-            return [
+            response = [
                 TextContent(type="text", text=f"Failed to create object: {res['error']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to create object: {str(e)}")
         return [
@@ -305,18 +352,17 @@ def edit_object(
     try:
         res = freecad.edit_object(doc_name, obj_name, obj_properties)
         screenshot = freecad.get_active_screenshot()
+        
         if res["success"]:
-            return [
+            response = [
                 TextContent(type="text", text=f"Object '{res['object_name']}' edited successfully"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
         else:
-            return [
+            response = [
                 TextContent(type="text", text=f"Failed to edit object: {res['error']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to edit object: {str(e)}")
         return [
@@ -339,18 +385,17 @@ def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextConten
     try:
         res = freecad.delete_object(doc_name, obj_name)
         screenshot = freecad.get_active_screenshot()
+        
         if res["success"]:
-            return [
+            response = [
                 TextContent(type="text", text=f"Object '{res['object_name']}' deleted successfully"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
         else:
-            return [
+            response = [
                 TextContent(type="text", text=f"Failed to delete object: {res['error']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to delete object: {str(e)}")
         return [
@@ -372,18 +417,17 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
     try:
         res = freecad.execute_code(code)
         screenshot = freecad.get_active_screenshot()
+        
         if res["success"]:
-            return [
+            response = [
                 TextContent(type="text", text=f"Code executed successfully: {res['message']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
         else:
-            return [
+            response = [
                 TextContent(type="text", text=f"Failed to execute code: {res['error']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to execute code: {str(e)}")
         return [
@@ -392,7 +436,7 @@ def execute_code(ctx: Context, code: str) -> list[TextContent | ImageContent]:
 
 
 @mcp.tool()
-def get_view(ctx: Context, view_name: Literal["Isometric", "Front", "Top", "Right", "Back", "Left", "Bottom", "Dimetric", "Trimetric"]) -> list[ImageContent]:
+def get_view(ctx: Context, view_name: Literal["Isometric", "Front", "Top", "Right", "Back", "Left", "Bottom", "Dimetric", "Trimetric"]) -> list[ImageContent | TextContent]:
     """Get a screenshot of the active view.
 
     Args:
@@ -413,7 +457,11 @@ def get_view(ctx: Context, view_name: Literal["Isometric", "Front", "Top", "Righ
     """
     freecad = get_freecad_connection()
     screenshot = freecad.get_active_screenshot(view_name)
-    return [ImageContent(type="image", data=screenshot, mimeType="image/png")]
+    
+    if screenshot is not None:
+        return [ImageContent(type="image", data=screenshot, mimeType="image/png")]
+    else:
+        return [TextContent(type="text", text="Cannot get screenshot in the current view type (such as TechDraw or Spreadsheet)")]
 
 
 @mcp.tool()
@@ -430,18 +478,17 @@ def insert_part_from_library(ctx: Context, relative_path: str) -> list[TextConte
     try:
         res = freecad.insert_part_from_library(relative_path)
         screenshot = freecad.get_active_screenshot()
+        
         if res["success"]:
-            return [
+            response = [
                 TextContent(type="text", text=f"Part inserted from library: {res['message']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
         else:
-            return [
+            response = [
                 TextContent(type="text", text=f"Failed to insert part from library: {res['error']}"),
-            ] + (
-                [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-            )
+            ]
+            return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to insert part from library: {str(e)}")
         return [
@@ -463,11 +510,10 @@ def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
     freecad = get_freecad_connection()
     try:
         screenshot = freecad.get_active_screenshot()
-        return [
+        response = [
             TextContent(type="text", text=json.dumps(freecad.get_objects(doc_name))),
-        ] + (
-            [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-        )
+        ]
+        return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to get objects: {str(e)}")
         return [
@@ -490,11 +536,10 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
     freecad = get_freecad_connection()
     try:
         screenshot = freecad.get_active_screenshot()
-        return [
+        response = [
             TextContent(type="text", text=json.dumps(freecad.get_object(doc_name, obj_name))),
-        ] + (
-            [ImageContent(type="image", data=screenshot, mimeType="image/png")] if not _only_text_feedback else []
-        )
+        ]
+        return add_screenshot_if_available(response, screenshot)
     except Exception as e:
         logger.error(f"Failed to get object: {str(e)}")
         return [
