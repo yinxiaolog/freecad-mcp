@@ -120,3 +120,9 @@ git clone https://github.com/neka-nat/freecad-mcp.git
 * `get_objects`: Get all objects in a document.
 * `get_object`: Get an object in a document.
 * `get_parts_list`: Get the list of parts in the [parts library](https://github.com/FreeCAD/FreeCAD-library).
+
+## Contributors
+
+<a href="https://github.com/neka-nat/freecad-mcp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=neka-nat/freecad-mcp" />
+</a>
