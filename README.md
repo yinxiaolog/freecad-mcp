@@ -126,3 +126,5 @@ git clone https://github.com/neka-nat/freecad-mcp.git
 <a href="https://github.com/neka-nat/freecad-mcp/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=neka-nat/freecad-mcp" />
 </a>
+
+Made with [contrib.rocks](https://contrib.rocks).
