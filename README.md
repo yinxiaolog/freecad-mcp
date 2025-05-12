@@ -32,7 +32,9 @@ https://claude.ai/share/7b48fd60-68ba-46fb-bb21-2fbb17399b48
 FreeCAD Addon directory is
 * Windows: `%APPDATA%\FreeCAD\Mod\`
 * Mac: `~/Library/Application Support/FreeCAD/Mod/`
-* Linux: `~/.FreeCAD/Mod/` or `~/snap/freecad/common/Mod/` (if you install FreeCAD from snap)
+* Linux:
+  * Ubuntu: `~/.FreeCAD/Mod/` or `~/snap/freecad/common/Mod/` (if you install FreeCAD from snap)
+  * Debian: `~/.local/share/FreeCAD/Mod`
 
 Please put `addon/FreeCADMCP` directory to the addon directory.
 
