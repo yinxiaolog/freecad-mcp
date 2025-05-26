@@ -55,7 +55,9 @@ And you can start RPC server by "Start RPC Server" command in "FreeCAD MCP" tool
 
 ## Setting up Claude Desktop
 
-Edit `claude_desktop_config.json` file.
+Pre-installation of the [uvx](https://docs.astral.sh/uv/guides/tools/) is required.
+
+And you need to edit Claude Desktop config file, `claude_desktop_config.json`.
 
 For user.
 
