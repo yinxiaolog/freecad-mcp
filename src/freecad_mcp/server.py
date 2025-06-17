@@ -350,9 +350,9 @@ def edit_object(
     """
     freecad = get_freecad_connection()
     try:
-        res = freecad.edit_object(doc_name, obj_name, obj_properties)
+        res = freecad.edit_object(doc_name, obj_name, {"Properties": obj_properties})
         screenshot = freecad.get_active_screenshot()
-        
+
         if res["success"]:
             response = [
                 TextContent(type="text", text=f"Object '{res['object_name']}' edited successfully"),
