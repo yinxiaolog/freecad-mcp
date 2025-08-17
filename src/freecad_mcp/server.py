@@ -113,7 +113,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
 
 mcp = FastMCP(
     "FreeCADMCP",
-    description="FreeCAD integration through the Model Context Protocol",
+    instructions="FreeCAD integration through the Model Context Protocol",
     lifespan=server_lifespan,
 )
 
