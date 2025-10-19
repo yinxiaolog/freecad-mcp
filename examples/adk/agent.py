@@ -18,8 +18,8 @@ root_agent = LlmAgent(
         MCPToolset(
             connection_params=StdioServerParameters(
                 command="uv",
-                args=["--directory", FREECAD_MCP_DIR, "run", "freecad-mcp"]
+                args=["--directory", FREECAD_MCP_DIR, "run", "freecad-mcp"],
             )
         )
-    ]
+    ],
 )

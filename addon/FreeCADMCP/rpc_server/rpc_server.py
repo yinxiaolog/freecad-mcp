@@ -98,19 +98,29 @@ def set_object_property(
                         if ref_obj:
                             refs.append((ref_obj, face))
                         else:
-                            raise ValueError(f"Referenced object '{ref_name}' not found.")
+                            raise ValueError(
+                                f"Referenced object '{ref_name}' not found."
+                            )
                     setattr(obj, prop, refs)
 
                 else:
                     setattr(obj, prop, val)
             # ShapeColor is a property of the ViewObject
             elif prop == "ShapeColor" and isinstance(val, (list, tuple)):
-                setattr(obj.ViewObject, prop, (float(val[0]), float(val[1]), float(val[2]), float(val[3])))
+                setattr(
+                    obj.ViewObject,
+                    prop,
+                    (float(val[0]), float(val[1]), float(val[2]), float(val[3])),
+                )
 
             elif prop == "ViewObject" and isinstance(val, dict):
                 for k, v in val.items():
                     if k == "ShapeColor":
-                        setattr(obj.ViewObject, k, (float(v[0]), float(v[1]), float(v[2]), float(v[3])))
+                        setattr(
+                            obj.ViewObject,
+                            k,
+                            (float(v[0]), float(v[1]), float(v[2]), float(v[3])),
+                        )
                     else:
                         setattr(obj.ViewObject, k, v)
 
@@ -149,7 +159,9 @@ class FreeCADRPC:
         else:
             return {"success": False, "error": res}
 
-    def edit_object(self, doc_name: str, obj_name: str, properties: dict[str, Any]) -> dict[str, Any]:
+    def edit_object(
+        self, doc_name: str, obj_name: str, properties: dict[str, Any]
+    ) -> dict[str, Any]:
         obj = Object(
             name=obj_name,
             properties=properties.get("Properties", {}),
@@ -171,6 +183,7 @@ class FreeCADRPC:
 
     def execute_code(self, code: str) -> dict[str, Any]:
         output_buffer = io.StringIO()
+
         def task():
             try:
                 with contextlib.redirect_stdout(output_buffer):
@@ -178,9 +191,7 @@ class FreeCADRPC:
                 FreeCAD.Console.PrintMessage("Python code executed successfully.\n")
                 return True
             except Exception as e:
-                FreeCAD.Console.PrintError(
-                    f"Error executing Python code: {e}\n"
-                )
+                FreeCAD.Console.PrintError(f"Error executing Python code: {e}\n")
                 return f"Error executing Python code: {e}\n"
 
         rpc_request_queue.put(task)
@@ -188,7 +199,8 @@ class FreeCADRPC:
         if res is True:
             return {
                 "success": True,
-                "message": "Python code execution scheduled. \nOutput: " + output_buffer.getvalue()
+                "message": "Python code execution scheduled. \nOutput: "
+                + output_buffer.getvalue(),
             }
         else:
             return {"success": False, "error": res}
@@ -223,10 +235,11 @@ class FreeCADRPC:
 
     def get_active_screenshot(self, view_name: str = "Isometric") -> str:
         """Get a screenshot of the active view.
-        
+
         Returns a base64-encoded string of the screenshot or None if a screenshot
         cannot be captured (e.g., when in TechDraw or Spreadsheet view).
         """
+
         # First check if the active view supports screenshots
         def check_view_supports_screenshots():
             try:
@@ -234,28 +247,28 @@ class FreeCADRPC:
                 if active_view is None:
                     FreeCAD.Console.PrintWarning("No active view available\n")
                     return False
-                
+
                 view_type = type(active_view).__name__
-                has_save_image = hasattr(active_view, 'saveImage')
-                FreeCAD.Console.PrintMessage(f"View type: {view_type}, Has saveImage: {has_save_image}\n")
+                has_save_image = hasattr(active_view, "saveImage")
+                FreeCAD.Console.PrintMessage(
+                    f"View type: {view_type}, Has saveImage: {has_save_image}\n"
+                )
                 return has_save_image
             except Exception as e:
                 FreeCAD.Console.PrintError(f"Error checking view capabilities: {e}\n")
                 return False
-                
+
         rpc_request_queue.put(check_view_supports_screenshots)
         supports_screenshots = rpc_response_queue.get()
-        
+
         if not supports_screenshots:
             FreeCAD.Console.PrintWarning("Current view does not support screenshots\n")
             return None
-            
+
         # If view supports screenshots, proceed with capture
         fd, tmp_path = tempfile.mkstemp(suffix=".png")
         os.close(fd)
-        rpc_request_queue.put(
-            lambda: self._save_active_screenshot(tmp_path, view_name)
-        )
+        rpc_request_queue.put(lambda: self._save_active_screenshot(tmp_path, view_name))
         res = rpc_response_queue.get()
         if res is True:
             try:
@@ -284,13 +297,18 @@ class FreeCADRPC:
             try:
                 if obj.type == "Fem::FemMeshGmsh" and obj.analysis:
                     from femmesh.gmshtools import GmshTools
-                    res = getattr(doc, obj.analysis).addObject(ObjectsFem.makeMeshGmsh(doc, obj.name))[0]
+
+                    res = getattr(doc, obj.analysis).addObject(
+                        ObjectsFem.makeMeshGmsh(doc, obj.name)
+                    )[0]
                     if "Part" in obj.properties:
                         target_obj = doc.getObject(obj.properties["Part"])
                         if target_obj:
                             res.Part = target_obj
                         else:
-                            raise ValueError(f"Referenced object '{obj.properties['Part']}' not found.")
+                            raise ValueError(
+                                f"Referenced object '{obj.properties['Part']}' not found."
+                            )
                         del obj.properties["Part"]
                     else:
                         raise ValueError("'Part' property not found in properties.")
@@ -312,7 +330,9 @@ class FreeCADRPC:
                     }
                     obj_type_short = obj.type.split("::")[1]
                     method_name = "make" + obj_type_short
-                    make_method = fem_make_methods.get(obj_type_short, getattr(ObjectsFem, method_name, None))
+                    make_method = fem_make_methods.get(
+                        obj_type_short, getattr(ObjectsFem, method_name, None)
+                    )
 
                     if callable(make_method):
                         res = make_method(doc, obj.name)
@@ -321,7 +341,9 @@ class FreeCADRPC:
                             f"FEM object '{res.Name}' created with '{method_name}'.\n"
                         )
                     else:
-                        raise ValueError(f"No creation method '{method_name}' found in ObjectsFem.")
+                        raise ValueError(
+                            f"No creation method '{method_name}' found in ObjectsFem."
+                        )
                     if obj.type != "Fem::AnalysisPython" and obj.analysis:
                         getattr(doc, obj.analysis).addObject(res)
                 else:
@@ -330,7 +352,7 @@ class FreeCADRPC:
                     FreeCAD.Console.PrintMessage(
                         f"{res.TypeId} '{res.Name}' added to '{doc_name}' via RPC.\n"
                     )
- 
+
                 doc.recompute()
                 return True
             except Exception as e:
@@ -347,7 +369,9 @@ class FreeCADRPC:
 
         obj_ins = doc.getObject(obj.name)
         if not obj_ins:
-            FreeCAD.Console.PrintError(f"Object '{obj.name}' not found in document '{doc_name}'.\n")
+            FreeCAD.Console.PrintError(
+                f"Object '{obj.name}' not found in document '{doc_name}'.\n"
+            )
             return f"Object '{obj.name}' not found in document '{doc_name}'.\n"
 
         try:
@@ -398,9 +422,9 @@ class FreeCADRPC:
         try:
             view = FreeCADGui.ActiveDocument.ActiveView
             # Check if the view supports screenshots
-            if not hasattr(view, 'saveImage'):
+            if not hasattr(view, "saveImage"):
                 return "Current view does not support screenshots"
-                
+
             if view_name == "Isometric":
                 view.viewIsometric()
             elif view_name == "Front":

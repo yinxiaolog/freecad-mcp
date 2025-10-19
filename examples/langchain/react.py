@@ -13,20 +13,16 @@ logging.basicConfig(level=logging.INFO)
 
 
 # Initialize LLM
-llm = ChatGroq(
-    model="llama-3.1-8b-instant",
-    temperature=0.7,
-    name="cad_design_agent"
-)
+llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0.7, name="cad_design_agent")
 
 # MCP server parameters
 server_params = StdioServerParameters(
-    command="uv",
-    args=["--directory", "path/to/freecad-mcp", "run", "freecad-mcp"]
+    command="uv", args=["--directory", "path/to/freecad-mcp", "run", "freecad-mcp"]
 )
 
 # Basic CAD assistant prompt
 INSTRUCTION = "You are a CAD designer."
+
 
 async def main():
     if "GROQ_API_KEY" not in os.environ:
@@ -51,7 +47,7 @@ async def main():
 
                 messages = [
                     SystemMessage(content=INSTRUCTION),
-                    HumanMessage(content=user_input)
+                    HumanMessage(content=user_input),
                 ]
                 try:
                     response = await agent.ainvoke({"messages": messages})
@@ -63,6 +59,7 @@ async def main():
                 except Exception as e:
                     logging.error(f"Agent error: {e}")
                     print("Something went wrong.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

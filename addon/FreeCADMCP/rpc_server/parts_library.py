@@ -27,7 +27,9 @@ def get_parts_list() -> list[str]:
     for root, _, files in os.walk(parts_lib_path):
         for file in files:
             if file.endswith(".FCStd"):
-                relative_path = os.path.relpath(os.path.join(root, file), parts_lib_path)
+                relative_path = os.path.relpath(
+                    os.path.join(root, file), parts_lib_path
+                )
                 parts.append(relative_path)
 
     return parts
