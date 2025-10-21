@@ -292,7 +292,11 @@ class FreeCADRPC:
         return True
 
     def _create_object_gui(self, doc_name, obj: Object):
-        doc = FreeCAD.getDocument(doc_name)
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"Error accessing document '{doc_name}': {e}\n")
+            return f"Document '{doc_name}' not found. Execption: {e}\n"
         if doc:
             try:
                 if obj.type == "Fem::FemMeshGmsh" and obj.analysis:
@@ -362,7 +366,11 @@ class FreeCADRPC:
             return f"Document '{doc_name}' not found.\n"
 
     def _edit_object_gui(self, doc_name: str, obj: Object):
-        doc = FreeCAD.getDocument(doc_name)
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"Error accessing document '{doc_name}': {e}\n")
+            return f"Document '{doc_name}' not found. Exception: {e}\n"
         if not doc:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
             return f"Document '{doc_name}' not found.\n"
@@ -398,7 +406,11 @@ class FreeCADRPC:
             return str(e)
 
     def _delete_object_gui(self, doc_name: str, obj_name: str):
-        doc = FreeCAD.getDocument(doc_name)
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"Error accessing document '{doc_name}': {e}\n")
+            return f"Document '{doc_name}' not found. Exception: {e}\n"
         if not doc:
             FreeCAD.Console.PrintError(f"Document '{doc_name}' not found.\n")
             return f"Document '{doc_name}' not found.\n"
