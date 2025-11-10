@@ -1,6 +1,9 @@
 import FreeCAD
 import FreeCADGui
 import ObjectsFem
+import Import  # <-- 添加此行
+import Mesh    # <-- 添加此行
+
 
 import contextlib
 import queue
@@ -249,6 +252,54 @@ class FreeCADRPC:
             FreeCAD.Console.PrintWarning(f"Screenshot error: {res}\n")
             return None
         return res
+    
+
+
+    def export_step(self, doc_name: str, file_path: str):
+        """
+        Exports all geometric objects from a document to a STEP file.
+        """
+        rpc_request_queue.put(lambda: self._export_step_gui(doc_name, file_path))
+        res = rpc_response_queue.get()
+        if res is True:
+            return {"success": True, "file_path": file_path}
+        else:
+            return {"success": False, "error": res}
+
+
+    def export_stl(self, doc_name: str, file_path: str):
+        """
+        Exports all geometric objects from a document to an STL file.
+        """
+        rpc_request_queue.put(lambda: self._export_stl_gui(doc_name, file_path))
+        res = rpc_response_queue.get()
+        if res is True:
+            return {"success": True, "file_path": file_path}
+        else:
+            return {"success": False, "error": res}
+        
+    def save_document(self, doc_name: str, file_path: str):
+        """
+        Saves the document as a .FCStd file.
+        """
+        rpc_request_queue.put(lambda: self._save_document_gui(doc_name, file_path))
+        res = rpc_response_queue.get()
+        if res is True:
+            return {"success": True, "file_path": file_path}
+        else:
+            return {"success": False, "error": res}
+        
+    def close_document(self, doc_name: str):
+        """
+        Closes the specified document.
+        """
+        rpc_request_queue.put(lambda: self._close_document_gui(doc_name))
+        res = rpc_response_queue.get()
+        if res is True:
+            return {"success": True, "document_name": doc_name}
+        else:
+            return {"success": False, "error": res}
+
 
     def _create_document_gui(self, name):
         try:
@@ -404,6 +455,78 @@ class FreeCADRPC:
             return True
         except Exception as e:
             return str(e)
+        
+    def _export_step_gui(self, doc_name: str, file_path: str):
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+            if not doc:
+                return f"Document '{doc_name}' not found."
+            
+            # 自动过滤所有具有 "Shape" 属性的对象
+            objs_to_export = [obj for obj in doc.Objects if hasattr(obj, "Shape")]
+            
+            if not objs_to_export:
+                return "No objects with exportable geometry (Shape) found in the document."
+
+            Import.export(objs_to_export, file_path)
+            FreeCAD.Console.PrintMessage(f"Exported {len(objs_to_export)} objects to STEP: {file_path}\n")
+            return True
+        except Exception as e:
+            error_msg = f"Failed to export STEP: {e}"
+            FreeCAD.Console.PrintError(error_msg + "\n")
+            return error_msg
+
+    def _export_stl_gui(self, doc_name: str, file_path: str):
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+            if not doc:
+                return f"Document '{doc_name}' not found."
+            
+            # 自动过滤所有具有 "Shape" 属性的对象
+            objs_to_export = [obj for obj in doc.Objects if hasattr(obj, "Shape")]
+            
+            if not objs_to_export:
+                return "No objects with exportable geometry (Shape) found in the document."
+
+            Mesh.export(objs_to_export, file_path)
+            FreeCAD.Console.PrintMessage(f"Exported {len(objs_to_export)} objects to STL: {file_path}\n")
+            return True
+        except Exception as e:
+            error_msg = f"Failed to export STL: {e}"
+            FreeCAD.Console.PrintError(error_msg + "\n")
+            return error_msg
+        
+    def _save_document_gui(self, doc_name: str, file_path: str):
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+            if not doc:
+                return f"Document '{doc_name}' not found."
+            
+            # 确保文件路径有 .FCStd 扩展名
+            if not file_path.lower().endswith(".fcstd"):
+                file_path += ".fcstd"
+
+            doc.saveAs(file_path)
+            FreeCAD.Console.PrintMessage(f"Document '{doc_name}' saved to: {file_path}\n")
+            return True
+        except Exception as e:
+            error_msg = f"Failed to save document: {e}"
+            FreeCAD.Console.PrintError(error_msg + "\n")
+            return error_msg
+        
+    def _close_document_gui(self, doc_name: str):
+        try:
+            doc = FreeCAD.getDocument(doc_name)
+            if not doc:
+                return f"Document '{doc_name}' not found."
+            
+            FreeCAD.closeDocument(doc_name)
+            FreeCAD.Console.PrintMessage(f"Document '{doc_name}' closed.\n")
+            return True
+        except Exception as e:
+            error_msg = f"Failed to close document: {e}"
+            FreeCAD.Console.PrintError(error_msg + "\n")
+            return error_msg
 
 
 def start_rpc_server(host="localhost", port=9875):

@@ -98,6 +98,19 @@ else:
 
     def get_parts_list(self) -> list[str]:
         return self.server.get_parts_list()
+    
+
+    def export_step(self, doc_name: str, file_path: str) -> dict[str, Any]:
+        return self.server.export_step(doc_name, file_path)
+
+    def export_stl(self, doc_name: str, file_path: str) -> dict[str, Any]:
+        return self.server.export_stl(doc_name, file_path)
+    
+    def save_document(self, doc_name: str, file_path: str) -> dict[str, Any]:
+        return self.server.save_document(doc_name, file_path)
+    
+    def close_document(self, doc_name: str) -> dict[str, Any]:
+        return self.server.close_document(doc_name)
 
     def disconnect(self):
         pass
@@ -562,7 +575,7 @@ def insert_part_from_library(
 
 
 @mcp.tool()
-def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
+def get_objects(ctx: Context, doc_name: str) -> list[TextContent | ImageContent]:
     """Get all objects in a document.
     You can use this tool to get the objects in a document to see what you can check or edit.
 
@@ -585,7 +598,7 @@ def get_objects(ctx: Context, doc_name: str) -> list[dict[str, Any]]:
 
 
 @mcp.tool()
-def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
+def get_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent | ImageContent]:
     """Get an object from a document.
     You can use this tool to get the properties of an object to see what you can check or edit.
 
@@ -611,7 +624,7 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-def get_parts_list(ctx: Context) -> list[str]:
+def get_parts_list(ctx: Context) -> list[TextContent]:
     """Get the list of parts in the parts library addon."""
     freecad = get_freecad_connection()
     parts = freecad.get_parts_list()
@@ -656,6 +669,176 @@ Only revert to basic creation methods in the following cases:
 - When a basic shape is explicitly requested.
 - When creating complex shapes requires custom scripting.
 """
+
+
+def export_document_as_step(
+    ctx: Context, doc_name: str, file_path: str
+) -> list[TextContent]:
+    """Exports all geometric objects from a document to a STEP file.
+    This automatically finds all objects with a 'Shape' (3D geometry) and exports them.
+
+    Args:
+        doc_name: The name of the document to export.
+        file_path: The absolute path (on the machine running FreeCAD) to save the .step file.
+
+    Returns:
+        A message indicating the success or failure of the export.
+
+    Examples:
+        If you want to export all geometry from "MyDocument" to "C:/temp/export.step":
+        ```json
+        {
+            "doc_name": "MyDocument",
+            "file_path": "C:/temp/export.step"
+        }
+        ```
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.export_step(doc_name, file_path) # <-- 已移除 obj_names
+        if res["success"]:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Successfully exported all objects to {res['file_path']}",
+                )
+            ]
+        else:
+            return [
+                TextContent(
+                    type="text", text=f"Failed to export STEP file: {res['error']}"
+                )
+            ]
+    except Exception as e:
+        logger.error(f"Failed to export STEP: {str(e)}")
+        return [TextContent(type="text", text=f"Failed to export STEP: {str(e)}")]
+
+
+def export_document_as_stl(
+    ctx: Context, doc_name: str, file_path: str
+) -> list[TextContent]:
+    """Exports all geometric objects from a document to an STL file.
+    This automatically finds all objects with a 'Shape' (3D geometry) and exports them.
+
+    Args:
+        doc_name: The name of the document to export.
+        file_path: The absolute path (on the machine running FreeCAD) to save the .stl file.
+
+    Returns:
+        A message indicating the success or failure of the export.
+
+    Examples:
+        If you want to export all geometry from "MyDocument" to "/home/user/my_model.stl":
+        ```json
+        {
+            "doc_name": "MyDocument",
+            "file_path": "/home/user/my_model.stl"
+        }
+        ```
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.export_stl(doc_name, file_path) # <-- 已移除 obj_names
+        if res["success"]:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Successfully exported all objects to {res['file_path']}",
+                )
+            ]
+        else:
+            return [
+                TextContent(
+                    type="text", text=f"Failed to export STL file: {res['error']}"
+                )
+            ]
+    except Exception as e:
+        logger.error(f"Failed to export STL: {str(e)}")
+        return [TextContent(type="text", text=f"Failed to export STL: {str(e)}")]
+
+
+def save_document_as_fcstd(
+    ctx: Context, doc_name: str, file_path: str
+) -> list[TextContent]:
+    """Saves the specified document to a .FCStd file.
+    This saves the entire document in FreeCAD's native format.
+
+    Args:
+        doc_name: The name of the document to save.
+        file_path: The absolute path (on the machine running FreeCAD) to save the .fcstd file.
+                   If the extension is missing, '.fcstd' will be added.
+
+    Returns:
+        A message indicating the success or failure of the save operation.
+
+    Examples:
+        If you want to save "MyDocument" to "C:/temp/my_project.fcstd":
+        ```json
+        {
+            "doc_name": "MyDocument",
+            "file_path": "C:/temp/my_project.fcstd"
+        }
+        ```
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.save_document(doc_name, file_path)
+        if res["success"]:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Successfully saved document to {res['file_path']}",
+                )
+            ]
+        else:
+            return [
+                TextContent(
+                    type="text", text=f"Failed to save document: {res['error']}"
+                )
+            ]
+    except Exception as e:
+        logger.error(f"Failed to save document: {str(e)}")
+        return [TextContent(type="text", text=f"Failed to save document: {str(e)}")]
+    
+
+def close_document(
+    ctx: Context, doc_name: str
+) -> list[TextContent]:
+    """Closes the specified document in FreeCAD.
+
+    Args:
+        doc_name: The name of the document to close.
+
+    Returns:
+        A message indicating the success or failure of the close operation.
+
+    Examples:
+        If you want to close "MyDocument":
+        ```json
+        {
+            "doc_name": "MyDocument"
+        }
+        ```
+    """
+    freecad = get_freecad_connection()
+    try:
+        res = freecad.close_document(doc_name)
+        if res["success"]:
+            return [
+                TextContent(
+                    type="text",
+                    text=f"Successfully closed document '{res['document_name']}'",
+                )
+            ]
+        else:
+            return [
+                TextContent(
+                    type="text", text=f"Failed to close document: {res['error']}"
+                )
+            ]
+    except Exception as e:
+        logger.error(f"Failed to close document: {str(e)}")
+        return [TextContent(type="text", text=f"Failed to close document: {str(e)}")]
 
 
 def main():
