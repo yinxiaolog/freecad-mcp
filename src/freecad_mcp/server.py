@@ -623,7 +623,6 @@ def get_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent |
         return [TextContent(type="text", text=f"Failed to get object: {str(e)}")]
 
 
-@mcp.tool()
 def get_parts_list(ctx: Context) -> list[TextContent]:
     """Get the list of parts in the parts library addon."""
     freecad = get_freecad_connection()
